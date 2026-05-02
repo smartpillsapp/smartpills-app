@@ -35,6 +35,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="quiz"    options={{ title:"Test",     tabBarIcon: (p)=><TabIcon name="school"     {...p}/> }}/>
       <Tabs.Screen name="ranking" options={{ title:"Ranking",  tabBarIcon: (p)=><TabIcon name="trophy"     {...p}/> }}/>
       <Tabs.Screen name="profile" options={{ title:"Perfil",   tabBarIcon: (p)=><TabIcon name="person"     {...p}/> }}/>
+      {/* Pantalla oculta: dentro del grupo (mantiene la barra), pero no aparece como pestaña */}
+      <Tabs.Screen name="saved"   options={{ href: null }}/>
     </Tabs>
   );
 }

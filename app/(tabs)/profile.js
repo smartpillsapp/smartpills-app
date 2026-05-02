@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 
 const C = {
@@ -27,6 +29,7 @@ function StatRow({ label, value, color }) {
 }
 
 export default function Profile() {
+  const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [email, setEmail]     = useState("");
   const [loading, setLoading] = useState(true);
@@ -87,6 +90,24 @@ export default function Profile() {
         </View>
 
         <View style={{ padding:20 }}>
+
+          {/* Mi Botiquín */}
+          <Pressable onPress={() => router.push("/saved")}
+            style={({pressed}) => ({
+              backgroundColor:C.white, borderWidth:1, borderColor:C.border, borderRadius:12,
+              padding:14, marginBottom:20, flexDirection:"row", alignItems:"center", gap:12,
+              opacity: pressed ? 0.85 : 1,
+            })}>
+            <View style={{ width:44, height:44, borderRadius:22, backgroundColor:C.teal50, alignItems:"center", justifyContent:"center" }}>
+              <Ionicons name="medkit" size={22} color={C.teal600}/>
+            </View>
+            <View style={{ flex:1 }}>
+              <Text style={{ fontSize:15, fontWeight:"500", color:C.ink, marginBottom:2 }}>Mi Botiquín</Text>
+              <Text style={{ fontSize:12, color:C.muted2 }}>Artículos, noticias y guías guardadas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.muted2}/>
+          </Pressable>
+
           <Text style={{ fontSize:11, fontWeight:"500", letterSpacing:1.2, textTransform:"uppercase", color:C.muted2, marginBottom:8 }}>
             Tu perfil
           </Text>

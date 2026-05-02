@@ -3,6 +3,8 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
+import { LEAGUES } from "../lib/leagues";
+import LeagueChangeFlash from "../components/LeagueChangeFlash";
 
 const C = {
   cream:   "#f7f5f0",
@@ -13,6 +15,7 @@ export default function RootLayout() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [leagueChange, setLeagueChange] = useState(null);
   const router   = useRouter();
   const segments = useSegments();
 
@@ -40,6 +43,28 @@ export default function RootLayout() {
       .single();
     setProfile(data);
     setLoading(false);
+
+    // Detectar cambio de liga: si previous_league existe y es distinta, mostrar flash
+    if(data?.previous_league && data.previous_league !== data.current_league) {
+      const oldIdx = LEAGUES.indexOf(data.previous_league);
+      const newIdx = LEAGUES.indexOf(data.current_league);
+      if(oldIdx >= 0 && newIdx >= 0) {
+        setLeagueChange({
+          direction: newIdx > oldIdx ? "up" : "down",
+          newLeague: data.current_league,
+        });
+      }
+    }
+  }
+
+  async function dismissLeagueChange() {
+    setLeagueChange(null);
+    if(session?.user?.id) {
+      await supabase
+        .from("profiles")
+        .update({ previous_league: null })
+        .eq("auth_user_id", session.user.id);
+    }
   }
 
   // Redirección según estado: login → onboarding → home
@@ -72,6 +97,13 @@ export default function RootLayout() {
         <Stack.Screen name="login"/>
         <Stack.Screen name="onboarding"/>
       </Stack>
+      {leagueChange && (
+        <LeagueChangeFlash
+          direction={leagueChange.direction}
+          newLeague={leagueChange.newLeague}
+          onDismiss={dismissLeagueChange}
+        />
+      )}
     </SafeAreaProvider>
   );
 }
