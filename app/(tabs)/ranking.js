@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../../lib/supabase";
-import { getTimeUntilReset } from "../../lib/leagues";
+import { getTimeUntilReset, getLeagueColor } from "../../lib/leagues";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -180,7 +181,7 @@ export default function Ranking() {
   ];
 
   const headerSubtitle =
-    mode === "league"  ? `Liga · ${userLeague || "Estudiantes"}` :
+    mode === "league"  ? "" :
     mode === "week"    ? "XP de esta semana · todos los usuarios" :
                          "XP histórico · todos los usuarios";
 
@@ -199,8 +200,37 @@ export default function Ranking() {
           Smart<Text style={{ color:C.teal300 }}>Pills</Text>
         </Text>
         <Text style={{ fontSize:10, fontWeight:"500", letterSpacing:1.4, textTransform:"uppercase", color:C.teal300, marginBottom:4 }}>Clasificación</Text>
-        <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white", marginBottom:4 }}>Ranking</Text>
-        <Text style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginBottom:6 }}>{headerSubtitle}</Text>
+        <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+          <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white" }}>Ranking</Text>
+          {userLeague === "Gerentes" ? (
+            <LinearGradient
+              colors={["#B9F2FF", "#FFFFFF", "#A0E7FF"]}
+              start={{x:0, y:0}} end={{x:1, y:1}}
+              style={{
+                flexDirection:"row", alignItems:"center", gap:10,
+                borderRadius:20, paddingHorizontal:14, paddingVertical:10,
+                shadowColor:"#B9F2FF", shadowOpacity:1, shadowRadius:14, shadowOffset:{width:0, height:0}, elevation:12,
+              }}>
+              <MaterialCommunityIcons name="trophy-award" size={42} color="#0f3d35"/>
+              <View>
+                <Text style={{ fontSize:10, color:"#0f3d35", fontWeight:"700", letterSpacing:1.2, textTransform:"uppercase", opacity:0.7 }}>Liga</Text>
+                <Text style={{ fontSize:18, color:"#0f3d35", fontWeight:"700", letterSpacing:0.3 }}>{userLeague}</Text>
+              </View>
+              <Ionicons name="sparkles" size={16} color="#FFC700"/>
+            </LinearGradient>
+          ) : userLeague ? (
+            <View style={{ flexDirection:"row", alignItems:"center", gap:10 }}>
+              <MaterialCommunityIcons name="trophy-award" size={48} color={getLeagueColor(userLeague)}/>
+              <View>
+                <Text style={{ fontSize:11, color:"rgba(255,255,255,0.6)", fontWeight:"600", letterSpacing:1.2, textTransform:"uppercase" }}>Liga</Text>
+                <Text style={{ fontSize:19, color:"white", fontWeight:"600" }}>{userLeague}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
+        {headerSubtitle ? (
+          <Text style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginBottom:6 }}>{headerSubtitle}</Text>
+        ) : null}
 
         {mode !== "history" && (
           <View style={{ alignSelf:"flex-start", flexDirection:"row", alignItems:"center", gap:5, backgroundColor:"rgba(255,255,255,0.12)", borderWidth:1, borderColor:"rgba(255,255,255,0.2)", borderRadius:12, paddingHorizontal:10, paddingVertical:3, marginBottom:12 }}>
