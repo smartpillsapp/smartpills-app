@@ -169,7 +169,7 @@ function ListView({ section, onBack }) {
   );
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:C.cream }} edges={["top"]}>
+    <SafeAreaView style={{ flex:1, backgroundColor:C.teal700 }} edges={["top"]}>
       <StatusBar style="light"/>
 
       <View style={{ backgroundColor:C.teal700, paddingHorizontal:16, paddingVertical:14 }}>
@@ -189,39 +189,41 @@ function ListView({ section, onBack }) {
         </View>
       </View>
 
-      {loading ? (
-        <View style={{ flex:1, alignItems:"center", justifyContent:"center" }}>
-          <ActivityIndicator size="large" color={C.teal600}/>
-        </View>
-      ) : filtered.length === 0 ? (
-        <View style={{ flex:1, alignItems:"center", justifyContent:"center", padding:24 }}>
-          <Text style={{ fontSize:38, marginBottom:12 }}>{section.icon}</Text>
-          <Text style={{ fontFamily:"Georgia", fontSize:16, color:C.ink, marginBottom:6 }}>
-            {search ? "Sin resultados" : "Aún no hay contenido"}
-          </Text>
-          <Text style={{ fontSize:13, color:C.muted2, textAlign:"center" }}>
-            {search ? "Prueba con otra búsqueda" : "Vuelve pronto, estamos preparando contenido."}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.id}
-          contentContainerStyle={{ padding:14 }}
-          renderItem={({ item }) => (
-            <ItemCard item={item}
-              accent={section.accent} accentLight={section.accentLight} accentBorder={section.accentBorder}
-              saved={savedIds.has(item.id)} onToggleSave={handleToggleSave} onOpen={handleOpen}/>
-          )}
-        />
-      )}
+      <View style={{ flex:1, backgroundColor:C.cream }}>
+        {loading ? (
+          <View style={{ flex:1, alignItems:"center", justifyContent:"center" }}>
+            <ActivityIndicator size="large" color={C.teal600}/>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={{ flex:1, alignItems:"center", justifyContent:"center", padding:24 }}>
+            <Text style={{ fontSize:38, marginBottom:12 }}>{section.icon}</Text>
+            <Text style={{ fontFamily:"Georgia", fontSize:16, color:C.ink, marginBottom:6 }}>
+              {search ? "Sin resultados" : "Aún no hay contenido"}
+            </Text>
+            <Text style={{ fontSize:13, color:C.muted2, textAlign:"center" }}>
+              {search ? "Prueba con otra búsqueda" : "Vuelve pronto, estamos preparando contenido."}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={item => item.id}
+            contentContainerStyle={{ padding:14 }}
+            renderItem={({ item }) => (
+              <ItemCard item={item}
+                accent={section.accent} accentLight={section.accentLight} accentBorder={section.accentBorder}
+                saved={savedIds.has(item.id)} onToggleSave={handleToggleSave} onOpen={handleOpen}/>
+            )}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 function EntryView({ onSelect }) {
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:C.cream }} edges={["top"]}>
+    <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
       <StatusBar style="light"/>
 
       <View style={{ backgroundColor:C.teal800, paddingHorizontal:16, paddingTop:18, paddingBottom:22 }}>
@@ -234,7 +236,7 @@ function EntryView({ onSelect }) {
         <Text style={{ fontSize:12, color:"rgba(255,255,255,0.55)" }}>Elige qué quieres consultar</Text>
       </View>
 
-      <View style={{ padding:16, gap:12 }}>
+      <View style={{ flex:1, backgroundColor:C.cream, padding:16, gap:12 }}>
         {Object.entries(SECTIONS).map(([key, sec]) => (
           <Pressable key={key} onPress={() => onSelect(key)}
             style={({pressed}) => ({

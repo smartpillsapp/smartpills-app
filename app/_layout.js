@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { LEAGUES } from "../lib/leagues";
 import LeagueChangeFlash from "../components/LeagueChangeFlash";
+import SplashAnimation from "../components/SplashAnimation";
 
 const C = {
   cream:   "#f7f5f0",
@@ -16,6 +17,7 @@ export default function RootLayout() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [leagueChange, setLeagueChange] = useState(null);
+  const [splashDone, setSplashDone] = useState(false);
   const router   = useRouter();
   const segments = useSegments();
 
@@ -81,6 +83,10 @@ export default function RootLayout() {
       router.replace("/");
     }
   }, [loading, session, profile, segments]);
+
+  if(!splashDone) {
+    return <SplashAnimation onFinish={() => setSplashDone(true)}/>;
+  }
 
   if(loading) {
     return (

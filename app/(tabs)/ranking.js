@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
-import { getTimeUntilReset, getLeagueColor } from "../../lib/leagues";
+import { getTimeUntilReset, getLeagueImage } from "../../lib/leagues";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -105,6 +106,7 @@ function RankRow({ user, highlight, zone }) {
 }
 
 export default function Ranking() {
+  const router = useRouter();
   const [mode, setMode]               = useState("league");
   const [loading, setLoading]         = useState(true);
   const [users, setUsers]             = useState([]);
@@ -191,17 +193,16 @@ export default function Ranking() {
                          "Top 10 · Histórico";
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:C.cream }} edges={["top"]}>
+    <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
       <StatusBar style="light"/>
 
       {/* Cabecera */}
       <View style={{ backgroundColor:C.teal800, paddingHorizontal:16, paddingTop:14, paddingBottom:14 }}>
-        <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white", marginBottom:10 }}>
+        <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white", marginBottom:2 }}>
           Smart<Text style={{ color:C.teal300 }}>Pills</Text>
         </Text>
-        <Text style={{ fontSize:10, fontWeight:"500", letterSpacing:1.4, textTransform:"uppercase", color:C.teal300, marginBottom:4 }}>Clasificación</Text>
-        <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-          <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white" }}>Ranking</Text>
+        <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:4, marginTop:8 }}>
+          <Text style={{ fontFamily:"Georgia", fontSize:22, color:"white" }}>Ranking</Text>
           {userLeague === "Gerentes" ? (
             <LinearGradient
               colors={["#B9F2FF", "#FFFFFF", "#A0E7FF"]}
@@ -211,7 +212,7 @@ export default function Ranking() {
                 borderRadius:20, paddingHorizontal:14, paddingVertical:10,
                 shadowColor:"#B9F2FF", shadowOpacity:1, shadowRadius:14, shadowOffset:{width:0, height:0}, elevation:12,
               }}>
-              <MaterialCommunityIcons name="trophy-award" size={42} color="#0f3d35"/>
+              <Image source={getLeagueImage(userLeague)} style={{ width:45, height:45 }} resizeMode="contain"/>
               <View>
                 <Text style={{ fontSize:10, color:"#0f3d35", fontWeight:"700", letterSpacing:1.2, textTransform:"uppercase", opacity:0.7 }}>Liga</Text>
                 <Text style={{ fontSize:18, color:"#0f3d35", fontWeight:"700", letterSpacing:0.3 }}>{userLeague}</Text>
@@ -219,15 +220,26 @@ export default function Ranking() {
               <Ionicons name="sparkles" size={16} color="#FFC700"/>
             </LinearGradient>
           ) : userLeague ? (
-            <View style={{ flexDirection:"row", alignItems:"center", gap:10 }}>
-              <MaterialCommunityIcons name="trophy-award" size={48} color={getLeagueColor(userLeague)}/>
+            <View style={{ flexDirection:"row", alignItems:"center", gap:10, backgroundColor:C.green100, borderWidth:1, borderColor:C.green500, borderRadius:14, paddingHorizontal:12, paddingVertical:8, transform:[{translateY:-30}] }}>
+              <Image source={getLeagueImage(userLeague)} style={{ width:51, height:51 }} resizeMode="contain"/>
               <View>
-                <Text style={{ fontSize:11, color:"rgba(255,255,255,0.6)", fontWeight:"600", letterSpacing:1.2, textTransform:"uppercase" }}>Liga</Text>
-                <Text style={{ fontSize:19, color:"white", fontWeight:"600" }}>{userLeague}</Text>
+                <Text style={{ fontSize:11, color:C.green700, fontWeight:"600", letterSpacing:1.2, textTransform:"uppercase" }}>Liga</Text>
+                <Text style={{ fontSize:19, color:C.ink, fontWeight:"600" }}>{userLeague}</Text>
               </View>
             </View>
           ) : null}
         </View>
+
+        {userLeague && userLeague !== "Gerentes" && (
+          <Pressable onPress={() => router.push("/leagues-info")} hitSlop={8}
+            style={{ alignSelf:"flex-end", flexDirection:"row", alignItems:"center", gap:4, marginTop:-30 }}>
+            <Text style={{ fontSize:10, fontWeight:"500", letterSpacing:1.4, textTransform:"uppercase", color:"rgba(255,255,255,0.55)" }}>
+              Acerca de las ligas
+            </Text>
+            <Ionicons name="help-circle-outline" size={14} color="rgba(255,255,255,0.55)"/>
+          </Pressable>
+        )}
+
         {headerSubtitle ? (
           <Text style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginBottom:6 }}>{headerSubtitle}</Text>
         ) : null}
@@ -235,7 +247,7 @@ export default function Ranking() {
         {mode !== "history" && (
           <View style={{ alignSelf:"flex-start", flexDirection:"row", alignItems:"center", gap:5, backgroundColor:"rgba(255,255,255,0.12)", borderWidth:1, borderColor:"rgba(255,255,255,0.2)", borderRadius:12, paddingHorizontal:10, paddingVertical:3, marginBottom:12 }}>
             <Text style={{ fontSize:11, color:C.teal300 }}>⏱</Text>
-            <Text style={{ fontSize:11, color:"white", fontWeight:"500" }}>La liga termina en {timeLeft}</Text>
+            <Text style={{ fontSize:11, color:"white", fontWeight:"500" }}>Faltan {timeLeft}</Text>
           </View>
         )}
 
@@ -251,6 +263,8 @@ export default function Ranking() {
           })}
         </View>
       </View>
+
+      <View style={{ flex:1, backgroundColor:C.cream }}>
 
       {/* Tarjeta destacada del usuario */}
       {myRow && (
@@ -332,6 +346,8 @@ export default function Ranking() {
           }
         />
       )}
+
+      </View>
     </SafeAreaView>
   );
 }

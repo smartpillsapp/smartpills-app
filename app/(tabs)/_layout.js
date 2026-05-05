@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Image } from "react-native";
 
 const C = {
   teal600: "#1a7a69",
@@ -8,9 +8,30 @@ const C = {
   white:   "#ffffff",
 };
 
-function TabIcon({ name, focused, color }) {
-  return <Ionicons name={focused ? name : `${name}-outline`} size={22} color={color}/>;
+function PillIcon({ focused }) {
+  return (
+    <Image
+      source={require("../../assets/pildo-base.png")}
+      style={{ width: 36, height: 36, opacity: focused ? 1 : 0.55 }}
+      resizeMode="contain"
+    />
+  );
 }
+
+function ImageTabIcon({ source, focused }) {
+  return (
+    <Image
+      source={source}
+      style={{ width: 36, height: 36, opacity: focused ? 1 : 0.55 }}
+      resizeMode="contain"
+    />
+  );
+}
+
+const ICON_GUIDES  = require("../../assets/icono-guias.png");
+const ICON_TEST    = require("../../assets/icono-test.png");
+const ICON_RANKING = require("../../assets/icono-ranking.png");
+const ICON_PROFILE = require("../../assets/icono-perfil.png");
 
 export default function TabsLayout() {
   return (
@@ -23,18 +44,17 @@ export default function TabsLayout() {
           backgroundColor: C.white,
           borderTopColor:  C.border,
           borderTopWidth:  1,
-          height: 64,
+          height: 74,
           paddingTop: 6,
           paddingBottom: 8,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "500" },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "500", marginTop: 4 },
       }}>
-      <Tabs.Screen name="index"   options={{ title:"Pills",    tabBarIcon: (p)=><TabIcon name="medical"    {...p}/> }}/>
-      <Tabs.Screen name="news"    options={{ title:"Noticias", tabBarIcon: (p)=><TabIcon name="newspaper"  {...p}/> }}/>
-      <Tabs.Screen name="guides"  options={{ title:"Guías",    tabBarIcon: (p)=><TabIcon name="book"       {...p}/> }}/>
-      <Tabs.Screen name="quiz"    options={{ title:"Test",     tabBarIcon: (p)=><TabIcon name="school"     {...p}/> }}/>
-      <Tabs.Screen name="ranking" options={{ title:"Ranking",  tabBarIcon: (p)=><TabIcon name="trophy"     {...p}/> }}/>
-      <Tabs.Screen name="profile" options={{ title:"Perfil",   tabBarIcon: (p)=><TabIcon name="person"     {...p}/> }}/>
+      <Tabs.Screen name="index"   options={{ title:"Pills",    tabBarIcon: (p)=><PillIcon {...p}/> }}/>
+      <Tabs.Screen name="guides"  options={{ title:"Guías",    tabBarIcon: (p)=><ImageTabIcon source={ICON_GUIDES}  {...p}/> }}/>
+      <Tabs.Screen name="quiz"    options={{ title:"Test",     tabBarIcon: (p)=><ImageTabIcon source={ICON_TEST}    {...p}/> }}/>
+      <Tabs.Screen name="ranking" options={{ title:"Ranking",  tabBarIcon: (p)=><ImageTabIcon source={ICON_RANKING} {...p}/> }}/>
+      <Tabs.Screen name="profile" options={{ title:"Perfil",   tabBarIcon: (p)=><ImageTabIcon source={ICON_PROFILE} {...p}/> }}/>
       {/* Pantalla oculta: dentro del grupo (mantiene la barra), pero no aparece como pestaña */}
       <Tabs.Screen name="saved"   options={{ href: null }}/>
     </Tabs>

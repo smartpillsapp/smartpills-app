@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -70,9 +70,9 @@ export default function Profile() {
   const initials = (profile?.username || profile?.full_name || email || "?").charAt(0).toUpperCase();
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:C.cream }} edges={["top"]}>
+    <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
       <StatusBar style="light"/>
-      <ScrollView contentContainerStyle={{ flexGrow:1 }}>
+      <ScrollView style={{ backgroundColor:C.cream }} contentContainerStyle={{ flexGrow:1 }}>
 
         <View style={{ backgroundColor:C.teal800, paddingHorizontal:24, paddingTop:24, paddingBottom:32, alignItems:"center" }}>
           <Text style={{ fontFamily:"Georgia", fontSize:18, color:"white", alignSelf:"flex-start", marginBottom:20 }}>
@@ -99,7 +99,7 @@ export default function Profile() {
               opacity: pressed ? 0.85 : 1,
             })}>
             <View style={{ width:44, height:44, borderRadius:22, backgroundColor:C.teal50, alignItems:"center", justifyContent:"center" }}>
-              <Ionicons name="medkit" size={22} color={C.teal600}/>
+              <Image source={require("../../assets/pildo-botiquin.png")} style={{ width:57, height:57 }} resizeMode="contain"/>
             </View>
             <View style={{ flex:1 }}>
               <Text style={{ fontSize:15, fontWeight:"500", color:C.ink, marginBottom:2 }}>Mi Botiquín</Text>

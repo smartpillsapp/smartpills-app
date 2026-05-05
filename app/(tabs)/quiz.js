@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import StreakCalendar from "../../components/StreakCalendar";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -21,6 +22,7 @@ export default function Quiz() {
   const router = useRouter();
   const [userProfession, setUserProfession] = useState(null);
   const [streak, setStreak] = useState(0);
+  const [completedDates, setCompletedDates] = useState([]);
 
   useEffect(() => { loadProfile(); }, []);
 
@@ -29,17 +31,30 @@ export default function Quiz() {
     if(!user) return;
     const { data:profile } = await supabase
       .from("profiles")
-      .select("profession, racha_dias")
+      .select("profession, racha_dias, ultima_vez_test")
       .eq("auth_user_id", user.id)
       .single();
     if(profile) {
       setUserProfession(profile.profession);
-      setStreak(profile.racha_dias || 0);
+      const racha = profile.racha_dias || 0;
+      setStreak(racha);
+
+      // Reconstruir días completados: cuenta atrás desde ultima_vez_test durante "racha" días
+      const dates = [];
+      if(profile.ultima_vez_test && racha > 0) {
+        const last = new Date(profile.ultima_vez_test);
+        for(let i = 0; i < racha; i++) {
+          const d = new Date(last);
+          d.setDate(d.getDate() - i);
+          dates.push(d.toISOString().split("T")[0]);
+        }
+      }
+      setCompletedDates(dates);
     }
   }
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:C.cream }} edges={["top"]}>
+    <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
       <StatusBar style="light"/>
 
       {/* Cabecera */}
@@ -47,18 +62,46 @@ export default function Quiz() {
         <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white", marginBottom:8 }}>
           Smart<Text style={{ color:C.teal300 }}>Pills</Text>
         </Text>
-        <Text style={{ fontSize:10, fontWeight:"500", letterSpacing:1.4, textTransform:"uppercase", color:C.teal300, marginBottom:4 }}>
-          Tests semanales
-        </Text>
-        <Text style={{ fontFamily:"Georgia", fontSize:18, color:"white", marginBottom:2 }}>
-          {userProfession ? `Tests para ${capitalize(userProfession)}` : "Elige tu test"}
-        </Text>
-        <Text style={{ fontSize:12, color:"rgba(255,255,255,0.55)" }}>
-          Racha actual: {streak} día{streak === 1 ? "" : "s"} 🔥
-        </Text>
+
+        <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"flex-end", marginTop:-12 }}>
+          <View style={{ flex:1 }}>
+            <Text style={{ fontSize:10, fontWeight:"500", letterSpacing:1.4, textTransform:"uppercase", color:C.teal300, marginBottom:4 }}>
+              Tests semanales
+            </Text>
+            <Text style={{ fontFamily:"Georgia", fontSize:18, color:"white" }}>
+              {userProfession ? `Tests para ${capitalize(userProfession)}` : "Elige tu test"}
+            </Text>
+          </View>
+
+          <View style={{ alignItems:"center", marginLeft:16 }}>
+            <Text style={{
+              fontFamily:       "Georgia",
+              fontSize:         68,
+              fontStyle:        "italic",
+              fontWeight:       "900",
+              color:            "#FF6B35",
+              textShadowColor:  "rgba(255,107,53,0.7)",
+              textShadowRadius: 12,
+              textShadowOffset: { width: 0, height: 0 },
+              lineHeight:       70,
+            }}>
+              {streak}
+            </Text>
+            <Text style={{
+              fontSize:        10,
+              color:           C.coral300,
+              fontWeight:      "700",
+              textTransform:   "uppercase",
+              letterSpacing:   1.3,
+              marginTop:       2,
+            }}>
+              días de racha
+            </Text>
+          </View>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding:16, gap:12 }}>
+      <ScrollView style={{ backgroundColor:C.cream }} contentContainerStyle={{ padding:16, gap:12 }}>
 
         {!userProfession && (
           <View style={{ backgroundColor:C.teal50, borderWidth:1, borderColor:C.teal100, borderRadius:12, padding:14, alignItems:"center" }}>
@@ -103,6 +146,11 @@ export default function Quiz() {
           </View>
           <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)"/>
         </Pressable>
+
+        {/* Calendario de racha */}
+        <View style={{ marginTop:12 }}>
+          <StreakCalendar completedDates={completedDates} streak={streak}/>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
