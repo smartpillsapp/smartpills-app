@@ -71,7 +71,7 @@ function ActionButton({ icon, active, activeColor, onPress }) {
 }
 
 function ReelCard({ article, cardHeight, saved, onSave, reaction, onReact, topInset }) {
-  const imgUrl    = CATEGORY_IMAGES[article.category] || DEFAULT_IMAGE;
+  const imgUrl    = article.image || CATEGORY_IMAGES[article.category] || DEFAULT_IMAGE;
   const catColor  = CATEGORY_COLORS[article.category] || "#1a7a69";
   const halfHeight = cardHeight * 0.42;
   const likeColor = "#1d9e87";
@@ -212,9 +212,16 @@ export default function Feed() {
       const articlesData = (articlesRes.data || []).map(a => ({ ...a, _source:"article" }));
       const newsData     = (newsRes.data || []).map(n => ({ ...n, _source:"news" }));
 
-      // Combinar y ordenar por fecha
-      const combined = [...articlesData, ...newsData]
-        .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+      // Pinned primero (por pin_position asc), después el resto por fecha desc
+      const all       = [...articlesData, ...newsData];
+      const pinned    = all.filter(a => a.pin_position != null)
+        .sort((a, b) => {
+          if(a.pin_position !== b.pin_position) return a.pin_position - b.pin_position;
+          return new Date(b.published_at || 0) - new Date(a.published_at || 0);
+        });
+      const notPinned = all.filter(a => a.pin_position == null)
+        .sort((a, b) => new Date(b.published_at || 0) - new Date(a.published_at || 0));
+      const combined  = [...pinned, ...notPinned];
 
       // Filtrar los que no me gustaron
       const dislikedIds = (prevReactions || []).filter(r => r.reaction === "dislike").map(r => r.article_id);

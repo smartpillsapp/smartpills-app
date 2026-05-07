@@ -130,7 +130,7 @@ export default function ArticleDetail() {
     );
   }
 
-  const imgUrl   = CATEGORY_IMAGES[article.category] || DEFAULT_IMAGE;
+  const imgUrl   = article.image || CATEGORY_IMAGES[article.category] || DEFAULT_IMAGE;
   const catColor = CATEGORY_COLORS[article.category] || "#1a7a69";
 
   let keyPoints = article.key_points;

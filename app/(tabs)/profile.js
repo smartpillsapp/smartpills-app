@@ -95,7 +95,7 @@ export default function Profile() {
           <Pressable onPress={() => router.push("/saved")}
             style={({pressed}) => ({
               backgroundColor:C.white, borderWidth:1, borderColor:C.border, borderRadius:12,
-              padding:14, marginBottom:20, flexDirection:"row", alignItems:"center", gap:12,
+              padding:14, marginBottom:12, flexDirection:"row", alignItems:"center", gap:12,
               opacity: pressed ? 0.85 : 1,
             })}>
             <View style={{ width:44, height:44, borderRadius:22, backgroundColor:C.teal50, alignItems:"center", justifyContent:"center" }}>
@@ -107,6 +107,25 @@ export default function Profile() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={C.muted2}/>
           </Pressable>
+
+          {/* Panel admin (solo si es admin) */}
+          {profile?.is_admin && (
+            <Pressable onPress={() => router.push("/admin")}
+              style={({pressed}) => ({
+                backgroundColor:C.teal800, borderRadius:12,
+                padding:14, marginBottom:20, flexDirection:"row", alignItems:"center", gap:12,
+                opacity: pressed ? 0.9 : 1,
+              })}>
+              <View style={{ width:44, height:44, borderRadius:22, backgroundColor:"rgba(255,255,255,0.12)", alignItems:"center", justifyContent:"center" }}>
+                <Ionicons name="construct" size={22} color="white"/>
+              </View>
+              <View style={{ flex:1 }}>
+                <Text style={{ fontSize:15, fontWeight:"600", color:"white", marginBottom:2 }}>Panel admin</Text>
+                <Text style={{ fontSize:12, color:"rgba(255,255,255,0.6)" }}>Guías, pills e infografías</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)"/>
+            </Pressable>
+          )}
 
           <Text style={{ fontSize:11, fontWeight:"500", letterSpacing:1.2, textTransform:"uppercase", color:C.muted2, marginBottom:8 }}>
             Tu perfil

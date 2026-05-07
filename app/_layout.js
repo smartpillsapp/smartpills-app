@@ -4,6 +4,7 @@ import { View, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { LEAGUES } from "../lib/leagues";
+import { AppContext } from "../lib/app-context";
 import LeagueChangeFlash from "../components/LeagueChangeFlash";
 import SplashAnimation from "../components/SplashAnimation";
 
@@ -59,6 +60,10 @@ export default function RootLayout() {
     }
   }
 
+  async function reloadProfile() {
+    if(session?.user?.id) await loadProfile(session.user.id);
+  }
+
   async function dismissLeagueChange() {
     setLeagueChange(null);
     if(session?.user?.id) {
@@ -97,19 +102,21 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
-        <Stack.Screen name="(tabs)"/>
-        <Stack.Screen name="login"/>
-        <Stack.Screen name="onboarding"/>
-      </Stack>
-      {leagueChange && (
-        <LeagueChangeFlash
-          direction={leagueChange.direction}
-          newLeague={leagueChange.newLeague}
-          onDismiss={dismissLeagueChange}
-        />
-      )}
-    </SafeAreaProvider>
+    <AppContext.Provider value={{ profile, reloadProfile }}>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
+          <Stack.Screen name="(tabs)"/>
+          <Stack.Screen name="login"/>
+          <Stack.Screen name="onboarding"/>
+        </Stack>
+        {leagueChange && (
+          <LeagueChangeFlash
+            direction={leagueChange.direction}
+            newLeague={leagueChange.newLeague}
+            onDismiss={dismissLeagueChange}
+          />
+        )}
+      </SafeAreaProvider>
+    </AppContext.Provider>
   );
 }

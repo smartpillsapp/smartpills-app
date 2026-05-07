@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import { useCallback } from "react";
+import MaintenanceView from "../../components/MaintenanceView";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -13,14 +15,17 @@ const C = {
   cream:"#f7f5f0",
   white:"#ffffff", ink:"#1c2b26", muted:"#607068", muted2:"#96a89f",
   border:"rgba(28,43,38,0.09)", borderMd:"rgba(28,43,38,0.16)",
+  langEnglish:"#4169E1",
+  langSpanish:"#800000",
+  tagBg:"#eef2f5", tagText:"#5a6b73",
 };
 
 const SECTIONS = {
   clinical: {
-    table:"clinical_guides", contentType:"guide",
+    contentType:"guide",
     title:"Guías clínicas", icon:"📖",
     accent:C.teal600, accentLight:C.teal50, accentBorder:C.teal100,
-    desc:"PDFs oficiales y de práctica clínica",
+    desc:"Enlaces a guías oficiales de sociedades científicas",
   },
   infographic: {
     table:"ai_infographics", contentType:"infographic",
@@ -30,12 +35,195 @@ const SECTIONS = {
   },
 };
 
-function getLanguageColor(language) {
-  const norm = String(language || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
-  if(norm === "castellano") return "#7f1d1d";
-  if(norm === "ingles")     return "#1d4ed8";
-  return "#1a7a69";
+// ──────────────────────────────────────────────────────────────────
+//  TARJETA NUEVA — Guías clínicas (enlaces externos)
+// ──────────────────────────────────────────────────────────────────
+
+function LanguageBadge({ idioma }) {
+  const isEnglish = idioma === "ingles";
+  const color = isEnglish ? C.langEnglish : C.langSpanish;
+  return (
+    <Text style={{ color, fontSize:11, fontWeight:"700", letterSpacing:0.6, textTransform:"uppercase" }}>
+      {isEnglish ? "Inglés" : "Castellano"}
+    </Text>
+  );
 }
+
+function ClinicalGuideCard({ item, saved, onToggleSave, onOpen }) {
+  return (
+    <Pressable onPress={() => onOpen(item)}
+      style={({pressed}) => ({
+        backgroundColor:C.white, borderRadius:16,
+        padding:16, marginBottom:12,
+        flexDirection:"row", gap:12, alignItems:"flex-start",
+        shadowColor:"#000", shadowOpacity:0.05, shadowRadius:6, shadowOffset:{ width:0, height:2 },
+        elevation:2,
+        opacity: pressed ? 0.92 : 1,
+      })}>
+      <View style={{ flex:1, minWidth:0 }}>
+        {/* Título */}
+        <Text style={{ fontSize:17, fontWeight:"bold", color:C.ink, marginBottom:6, lineHeight:22 }}>
+          {item.titulo}
+        </Text>
+
+        {/* Sociedad */}
+        <Text style={{ fontSize:12, fontWeight:"500", color:C.muted, textTransform:"uppercase", letterSpacing:0.6, marginBottom:10 }}>
+          {item.sociedad}
+        </Text>
+
+        {/* Idioma + especialidades */}
+        <View style={{ flexDirection:"row", flexWrap:"wrap", gap:6, alignItems:"center" }}>
+          <LanguageBadge idioma={item.idioma}/>
+          {item.especialidades?.map((esp, i) => (
+            <View key={i} style={{ backgroundColor:C.tagBg, paddingHorizontal:9, paddingVertical:3, borderRadius:8 }}>
+              <Text style={{ fontSize:11, color:C.tagText, fontWeight:"500" }}>#{esp}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Botón guardar */}
+      <Pressable onPress={(e) => { e.stopPropagation?.(); onToggleSave(item.id); }} hitSlop={8}
+        style={{
+          width:36, height:36, borderRadius:18,
+          borderWidth:1, borderColor: saved ? C.coral100 : C.border,
+          backgroundColor: saved ? C.coral100 : "transparent",
+          alignItems:"center", justifyContent:"center",
+        }}>
+        <Ionicons name={saved?"bookmark":"bookmark-outline"} size={16} color={saved?C.coral500:C.muted2}/>
+      </Pressable>
+    </Pressable>
+  );
+}
+
+function ClinicalGuidesView({ onBack }) {
+  const router = useRouter();
+  const [profileId, setProfileId] = useState(null);
+  const [savedIds, setSavedIds] = useState(new Set());
+  const [search, setSearch] = useState("");
+  const [guides, setGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Recargar guías cada vez que se entra a la pantalla (para reflejar cambios de admin)
+  useFocusEffect(useCallback(() => { loadAll(); }, []));
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      // 1) Cargar lista de guías
+      const { data:list } = await supabase.from("clinical_guides_v2")
+        .select("*").order("created_at", { ascending:false });
+      setGuides(list || []);
+
+      // 2) Cargar guardados del usuario
+      const { data:{ user } } = await supabase.auth.getUser();
+      if(user) {
+        const { data:profile } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).single();
+        if(profile) {
+          setProfileId(profile.id);
+          const { data:rows } = await supabase
+            .from("user_saved_content").select("content_id")
+            .eq("user_id", profile.id).eq("content_type", "guide");
+          setSavedIds(new Set((rows || []).map(r => r.content_id)));
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleToggleSave(itemId) {
+    if(!profileId) return;
+    const wasSaved = savedIds.has(itemId);
+    setSavedIds(prev => {
+      const next = new Set(prev);
+      wasSaved ? next.delete(itemId) : next.add(itemId);
+      return next;
+    });
+    try {
+      if(wasSaved) {
+        await supabase.from("user_saved_content").delete()
+          .eq("user_id", profileId).eq("content_id", itemId).eq("content_type", "guide");
+      } else {
+        await supabase.from("user_saved_content").insert({
+          user_id:profileId, content_id:itemId, content_type:"guide",
+        });
+      }
+    } catch(err) {
+      setSavedIds(prev => {
+        const next = new Set(prev);
+        wasSaved ? next.add(itemId) : next.delete(itemId);
+        return next;
+      });
+    }
+  }
+
+  function handleOpen(item) {
+    router.push({ pathname:"/guide-detail", params:{ id: item.id } });
+  }
+
+  const q = search.toLowerCase();
+  const filtered = !q ? guides : guides.filter(g =>
+    (g.titulo || "").toLowerCase().includes(q) ||
+    (g.sociedad || "").toLowerCase().includes(q) ||
+    (g.especialidades || []).some(e => e.toLowerCase().includes(q))
+  );
+
+  return (
+    <SafeAreaView style={{ flex:1, backgroundColor:C.teal700 }} edges={["top"]}>
+      <StatusBar style="light"/>
+
+      <View style={{ backgroundColor:C.teal700, paddingHorizontal:16, paddingVertical:14 }}>
+        <Pressable onPress={onBack}
+          style={{ alignSelf:"flex-start", backgroundColor:"rgba(255,255,255,0.12)", borderWidth:1, borderColor:"rgba(255,255,255,0.2)", borderRadius:8, paddingHorizontal:10, paddingVertical:4, marginBottom:10 }}>
+          <Text style={{ fontSize:12, color:"white" }}>← Volver</Text>
+        </Pressable>
+        <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white", marginBottom:12 }}>
+          📖 Guías clínicas
+        </Text>
+        <View style={{ flexDirection:"row", alignItems:"center", backgroundColor:"rgba(255,255,255,0.12)", borderWidth:1, borderColor:"rgba(255,255,255,0.18)", borderRadius:10, paddingHorizontal:12, height:40, gap:8 }}>
+          <Ionicons name="search-outline" size={18} color="rgba(255,255,255,0.6)"/>
+          <TextInput value={search} onChangeText={setSearch}
+            placeholder="Buscar por título, sociedad o especialidad..."
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            style={{ flex:1, color:"white", fontSize:14 }}/>
+        </View>
+      </View>
+
+      <View style={{ flex:1, backgroundColor:C.cream }}>
+        {loading ? (
+          <View style={{ flex:1, alignItems:"center", justifyContent:"center" }}>
+            <ActivityIndicator size="large" color={C.teal600}/>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={{ flex:1, alignItems:"center", justifyContent:"center", padding:24 }}>
+            <Text style={{ fontSize:38, marginBottom:12 }}>📖</Text>
+            <Text style={{ fontFamily:"Georgia", fontSize:16, color:C.ink, marginBottom:6 }}>
+              {search ? "Sin resultados" : "Aún no hay guías"}
+            </Text>
+            <Text style={{ fontSize:13, color:C.muted2, textAlign:"center" }}>
+              {search ? "Prueba con otra búsqueda" : "Pronto añadiremos contenido."}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={item => item.id}
+            contentContainerStyle={{ padding:16, paddingBottom:24 }}
+            renderItem={({ item }) => (
+              <ClinicalGuideCard item={item}
+                saved={savedIds.has(item.id)} onToggleSave={handleToggleSave} onOpen={handleOpen}/>
+            )}
+          />
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  TARJETA ANTIGUA — Infografías (siguen cargándose desde supabase)
+// ──────────────────────────────────────────────────────────────────
 
 function PdfPlaceholder({ accent, accentLight, accentBorder }) {
   return (
@@ -46,21 +234,18 @@ function PdfPlaceholder({ accent, accentLight, accentBorder }) {
       shadowColor:"#000", shadowOpacity:0.06, shadowRadius:3, shadowOffset:{width:0, height:1}, elevation:2,
       position:"relative", overflow:"hidden",
     }}>
-      {/* Esquina doblada */}
       <View style={{ position:"absolute", top:0, right:0, width:13, height:13, backgroundColor:accentLight, borderBottomLeftRadius:3 }}/>
       <View style={{ position:"absolute", top:0, right:0, width:0, height:0,
         borderTopWidth:0, borderLeftWidth:13, borderBottomWidth:13,
         borderLeftColor:"transparent", borderBottomColor:accentBorder, borderTopColor:"transparent",
       }}/>
-
       <Ionicons name="document-text" size={26} color={accent} style={{ marginTop:4 }}/>
       <Text style={{ fontSize:9, fontWeight:"700", color:accent, letterSpacing:0.6, marginTop:3 }}>PDF</Text>
     </View>
   );
 }
 
-function ItemCard({ item, accent, accentLight, accentBorder, saved, onToggleSave, onOpen }) {
-  const langColor = getLanguageColor(item.language);
+function InfographicCard({ item, accent, accentLight, accentBorder, saved, onToggleSave, onOpen }) {
   return (
     <Pressable onPress={() => onOpen(item)}
       style={({pressed}) => ({
@@ -76,15 +261,7 @@ function ItemCard({ item, accent, accentLight, accentBorder, saved, onToggleSave
         <Text style={{ fontFamily:"Georgia", fontSize:14, lineHeight:19, color:C.ink, marginBottom:6 }}>
           {item.title}
         </Text>
-        <View style={{ flexDirection:"row", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-          <Text style={{ fontSize:11, color:C.muted2 }}>{item.year}</Text>
-          {item.language ? (
-            <>
-              <Text style={{ fontSize:11, color:C.muted2 }}>·</Text>
-              <Text style={{ fontSize:11, color:langColor, fontWeight:"600" }}>{item.language}</Text>
-            </>
-          ) : null}
-        </View>
+        <Text style={{ fontSize:11, color:C.muted2 }}>{item.year}</Text>
       </View>
       <Pressable onPress={(e) => { e.stopPropagation?.(); onToggleSave(item.id); }} hitSlop={8}
         style={{ width:28, height:28, borderRadius:14, borderWidth:1, borderColor:saved?C.coral100:C.border, backgroundColor:saved?C.coral100:"transparent", alignItems:"center", justifyContent:"center" }}>
@@ -94,7 +271,7 @@ function ItemCard({ item, accent, accentLight, accentBorder, saved, onToggleSave
   );
 }
 
-function ListView({ section, onBack }) {
+function InfographicsView({ section, onBack }) {
   const router = useRouter();
   const [items, setItems]       = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -102,7 +279,7 @@ function ListView({ section, onBack }) {
   const [savedIds, setSavedIds] = useState(new Set());
   const [search, setSearch]     = useState("");
 
-  useEffect(() => { load(); }, [section]);
+  useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
@@ -210,7 +387,7 @@ function ListView({ section, onBack }) {
             keyExtractor={item => item.id}
             contentContainerStyle={{ padding:14 }}
             renderItem={({ item }) => (
-              <ItemCard item={item}
+              <InfographicCard item={item}
                 accent={section.accent} accentLight={section.accentLight} accentBorder={section.accentBorder}
                 saved={savedIds.has(item.id)} onToggleSave={handleToggleSave} onOpen={handleOpen}/>
             )}
@@ -220,6 +397,10 @@ function ListView({ section, onBack }) {
     </SafeAreaView>
   );
 }
+
+// ──────────────────────────────────────────────────────────────────
+//  Pantalla de selección
+// ──────────────────────────────────────────────────────────────────
 
 function EntryView({ onSelect }) {
   return (
@@ -262,8 +443,12 @@ function EntryView({ onSelect }) {
 export default function Guides() {
   const [view, setView] = useState("entry"); // "entry" | "clinical" | "infographic"
 
-  if(view === "clinical" || view === "infographic") {
-    return <ListView section={SECTIONS[view]} onBack={() => setView("entry")}/>;
-  }
+  if(view === "clinical")    return <ClinicalGuidesView onBack={() => setView("entry")}/>;
+  if(view === "infographic") return (
+    <MaintenanceView
+      title="🎨 Resumen e infografías"
+      onBack={() => setView("entry")}
+    />
+  );
   return <EntryView onSelect={setView}/>;
 }

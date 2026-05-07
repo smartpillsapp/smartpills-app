@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Pla
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "../lib/supabase";
+import { useApp } from "../lib/app-context";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal50:"#edf8f6",
@@ -19,6 +20,7 @@ const PROFESSIONS = [
 ];
 
 export default function Onboarding() {
+  const { reloadProfile }     = useApp();
   const [step, setStep]       = useState(0);
   const [answers, setAnswers] = useState({ profession:"", specialty:"", workplace:"" });
   const [saving, setSaving]   = useState(false);
@@ -66,7 +68,8 @@ export default function Onboarding() {
       }).eq("auth_user_id", user.id);
 
       if(error) throw error;
-      // El layout raíz detectará el cambio y redirigirá a /
+      // Refrescar perfil en el layout raíz para que detecte que onboarding está completo
+      await reloadProfile();
     } catch(err) {
       setError(err.message || "Error al guardar. Inténtalo de nuevo.");
     } finally {
