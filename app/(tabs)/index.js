@@ -183,9 +183,10 @@ export default function Feed() {
       if(!user) return;
 
       const { data:profile } = await supabase
-        .from("profiles").select("id").eq("auth_user_id", user.id).single();
+        .from("profiles").select("id, personalized_feed_enabled").eq("auth_user_id", user.id).single();
       if(!profile) return;
       setProfileId(profile.id);
+      const personalized = profile.personalized_feed_enabled !== false; // default true
 
       // Reacciones previas (no diferenciamos por tipo, los UUIDs son únicos)
       const { data:prevReactions } = await supabase
@@ -203,27 +204,77 @@ export default function Feed() {
       (savedRows || []).forEach(r => { savedMap[r.content_id] = true; });
       setSaved(savedMap);
 
-      // Cargar artículos y noticias en paralelo
-      const [articlesRes, newsRes] = await Promise.all([
-        supabase.from("articles").select("*").order("published_at", { ascending:false }).limit(50),
-        supabase.from("news").select("*").order("published_at", { ascending:false }).limit(50),
+      // Cargar pills: SIEMPRE traer los fijados (sin límite, da igual cuándo se publicaron)
+      // + los recientes (hasta 50) que no estén fijados
+      const [pinnedArtRes, recentArtRes, pinnedNewsRes, recentNewsRes] = await Promise.all([
+        supabase.from("articles").select("*").not("pin_position", "is", null).order("pin_position", { ascending:true }),
+        supabase.from("articles").select("*").is("pin_position", null).order("published_at", { ascending:false }).limit(50),
+        supabase.from("news").select("*").not("pin_position", "is", null).order("pin_position", { ascending:true }),
+        supabase.from("news").select("*").is("pin_position", null).order("published_at", { ascending:false }).limit(50),
       ]);
 
-      const articlesData = (articlesRes.data || []).map(a => ({ ...a, _source:"article" }));
-      const newsData     = (newsRes.data || []).map(n => ({ ...n, _source:"news" }));
+      const articlesData = [
+        ...(pinnedArtRes.data || []),
+        ...(recentArtRes.data || []),
+      ].map(a => ({ ...a, _source:"article" }));
+      const newsData = [
+        ...(pinnedNewsRes.data || []),
+        ...(recentNewsRes.data || []),
+      ].map(n => ({ ...n, _source:"news" }));
+      const all = [...articlesData, ...newsData];
 
-      // Pinned primero (por pin_position asc), después el resto por fecha desc
-      const all       = [...articlesData, ...newsData];
-      const pinned    = all.filter(a => a.pin_position != null)
+      // Algoritmo de personalización: score por categoría según reacciones del usuario
+      let categoryScores = {};
+      if(personalized && (prevReactions || []).length > 0) {
+        // Mapa rápido: article_id → categoría (de los pills cargados)
+        const catFromLoaded = {};
+        all.forEach(a => { catFromLoaded[a.id] = a.category; });
+
+        // Para reacciones a pills NO cargados, hacemos un par de queries adicionales
+        const reactedIds = prevReactions.map(r => r.article_id);
+        const missingIds = reactedIds.filter(id => !catFromLoaded[id]);
+        let extraCats = {};
+        if(missingIds.length > 0) {
+          const [extraArt, extraNews] = await Promise.all([
+            supabase.from("articles").select("id, category").in("id", missingIds),
+            supabase.from("news").select("id, category").in("id", missingIds),
+          ]);
+          (extraArt.data || []).forEach(a => { extraCats[a.id] = a.category; });
+          (extraNews.data || []).forEach(n => { extraCats[n.id] = n.category; });
+        }
+
+        // Construir scores: like = +2, dislike = -1
+        prevReactions.forEach(r => {
+          const cat = catFromLoaded[r.article_id] || extraCats[r.article_id];
+          if(!cat) return;
+          if(!categoryScores[cat]) categoryScores[cat] = 0;
+          categoryScores[cat] += (r.reaction === "like" ? 2 : -1);
+        });
+      }
+
+      // Función de score combinada: preferencia de categoría + frescura
+      function scorePill(p) {
+        const catScore  = categoryScores[p.category] || 0;
+        const ageDays   = (Date.now() - new Date(p.published_at || 0).getTime()) / (1000 * 60 * 60 * 24);
+        const recency   = Math.max(0, 30 - ageDays); // 0 después de 30 días
+        return catScore * 5 + recency;
+      }
+
+      // Pinned primero (por pin_position asc); después el resto:
+      //  - Si personalized: por score (categoría preferida + frescura)
+      //  - Si NO personalized: solo por fecha
+      const pinned = all.filter(a => a.pin_position != null)
         .sort((a, b) => {
           if(a.pin_position !== b.pin_position) return a.pin_position - b.pin_position;
           return new Date(b.published_at || 0) - new Date(a.published_at || 0);
         });
       const notPinned = all.filter(a => a.pin_position == null)
-        .sort((a, b) => new Date(b.published_at || 0) - new Date(a.published_at || 0));
-      const combined  = [...pinned, ...notPinned];
+        .sort((a, b) => personalized
+          ? scorePill(b) - scorePill(a)
+          : new Date(b.published_at || 0) - new Date(a.published_at || 0));
+      const combined = [...pinned, ...notPinned];
 
-      // Filtrar los que no me gustaron
+      // Filtrar los que no me gustaron (para que no vuelvan a salir)
       const dislikedIds = (prevReactions || []).filter(r => r.reaction === "dislike").map(r => r.article_id);
       const filtered = combined.filter(a => !dislikedIds.includes(a.id));
 

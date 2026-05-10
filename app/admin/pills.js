@@ -31,7 +31,6 @@ export default function AdminPills() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
   useFocusEffect(useCallback(() => { load(); }, []));
 
   async function load() {
@@ -43,7 +42,25 @@ export default function AdminPills() {
       ]);
       const articles = (artRes.data || []).map(a => ({ ...a, _kind:"article" }));
       const news     = (newsRes.data || []).map(n => ({ ...n, _kind:"news" }));
-      const combined = sortByPinThenDate([...articles, ...news]);
+      const all = [...articles, ...news];
+
+      // Contar likes/dislikes por pill — cargamos TODAS las reacciones (admin las ve)
+      let countsByArticle = {};
+      const { data: reactions } = await supabase
+        .from("reel_reactions")
+        .select("article_id, reaction");
+      (reactions || []).forEach(r => {
+        if(!countsByArticle[r.article_id]) countsByArticle[r.article_id] = { likes:0, dislikes:0 };
+        if(r.reaction === "like")    countsByArticle[r.article_id].likes++;
+        if(r.reaction === "dislike") countsByArticle[r.article_id].dislikes++;
+      });
+      const enriched = all.map(it => ({
+        ...it,
+        _likes:    countsByArticle[it.id]?.likes    || 0,
+        _dislikes: countsByArticle[it.id]?.dislikes || 0,
+      }));
+
+      const combined = sortByPinThenDate(enriched);
       setItems(combined);
     } finally {
       setLoading(false);
@@ -186,9 +203,21 @@ export default function AdminPills() {
                   <Text style={{ fontSize:15, fontWeight:"700", color:C.ink, marginBottom:4, lineHeight:20 }}>
                     {item.title}
                   </Text>
-                  <Text style={{ fontSize:11, color:C.muted, marginBottom:8 }}>
-                    {item.journal || item.source_name || "Sin fuente"}
-                  </Text>
+                  <View style={{ flexDirection:"row", alignItems:"center", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+                    <Text style={{ fontSize:11, color:C.muted }}>
+                      {item.journal || item.source_name || "Sin fuente"}
+                    </Text>
+                    <View style={{ flexDirection:"row", gap:6 }}>
+                      <View style={{ flexDirection:"row", alignItems:"center", gap:3, backgroundColor:"#e6f5f1", paddingHorizontal:6, paddingVertical:2, borderRadius:5 }}>
+                        <Ionicons name="heart" size={11} color="#1d9e87"/>
+                        <Text style={{ fontSize:11, color:"#1d9e87", fontWeight:"700" }}>{item._likes}</Text>
+                      </View>
+                      <View style={{ flexDirection:"row", alignItems:"center", gap:3, backgroundColor:"#fbe5dd", paddingHorizontal:6, paddingVertical:2, borderRadius:5 }}>
+                        <Ionicons name="thumbs-down" size={11} color={C.coral500}/>
+                        <Text style={{ fontSize:11, color:C.coral500, fontWeight:"700" }}>{item._dislikes}</Text>
+                      </View>
+                    </View>
+                  </View>
 
                   <View style={{ flexDirection:"row", gap:8 }}>
                     <Pressable onPress={() => router.push({

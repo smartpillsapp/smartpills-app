@@ -14,12 +14,16 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.smartpills.app",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.smartpills.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#eef9ff"
       },
       "edgeToEdgeEnabled": true
     },
@@ -28,6 +32,13 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "39afdce9-b16a-4cd2-8ffc-a3eee7c64e75"
+      }
+    },
+    "owner": "smartpills"
   }
 }

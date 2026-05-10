@@ -38,6 +38,14 @@ const SECTIONS = [
     desc:"Resúmenes visuales en PDF",
     accent:C.amber500, accentLight:C.amber50, accentBorder:C.amber100,
   },
+  {
+    key:"stats",
+    route:"/admin/stats",
+    title:"Estadísticas",
+    icon:"📊",
+    desc:"Likes, dislikes y categorías más populares",
+    accent:C.teal600, accentLight:C.teal50, accentBorder:C.teal100,
+  },
 ];
 
 export default function AdminHub() {

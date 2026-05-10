@@ -5,6 +5,8 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
+import TestResultFlash from "../components/TestResultFlash";
+import StreakFlash from "../components/StreakFlash";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -60,6 +62,8 @@ export default function TestScreen() {
 
   const [saving, setSaving]     = useState(false);
   const [newStreak, setNewStreak] = useState(null);
+  const [flashDismissed, setFlashDismissed] = useState(false);
+  const [streakFlashDismissed, setStreakFlashDismissed] = useState(false);
   const scoreRef = useRef(0);
 
   useEffect(() => { loadAll(); }, []);
@@ -236,6 +240,16 @@ export default function TestScreen() {
         </View>
       </SafeAreaView>
     );
+  }
+
+  // ── FLASH 1: puntuación (antes del resultado) ──
+  if(showResult && !flashDismissed) {
+    return <TestResultFlash correct={correct} onDismiss={() => setFlashDismissed(true)}/>;
+  }
+
+  // ── FLASH 2: racha (solo en reto diario, después del de puntuación) ──
+  if(showResult && flashDismissed && testKind === "daily" && !streakFlashDismissed) {
+    return <StreakFlash streak={newStreak ?? streak} onDismiss={() => setStreakFlashDismissed(true)}/>;
   }
 
   // ── RESULTADO ──
