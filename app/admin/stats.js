@@ -25,17 +25,14 @@ export default function AdminStats() {
   async function load() {
     setLoading(true);
     try {
-      // 1) Cargar todos los pills (articles + news)
-      const [artRes, newsRes, reactRes] = await Promise.all([
+      // 1) Cargar todos los pills (tabla unificada: articles)
+      const [artRes, reactRes] = await Promise.all([
         supabase.from("articles").select("id, title, category, source_name, journal").limit(2000),
-        supabase.from("news").select("id, title, category, source_name").limit(2000),
         supabase.from("reel_reactions").select("article_id, reaction"),
       ]);
 
-      const articles = (artRes.data || []).map(a => ({ ...a, _kind:"article" }));
-      const news     = (newsRes.data || []).map(n => ({ ...n, _kind:"news" }));
-      const all      = [...articles, ...news];
-      const allMap   = {};
+      const all = artRes.data || [];
+      const allMap = {};
       all.forEach(it => { allMap[it.id] = it; });
 
       // 2) Agregar reacciones por pill y por categoría
@@ -185,7 +182,6 @@ function SummaryCard({ label, value, color }) {
 }
 
 function RankRow({ index, item, count, color, icon }) {
-  const isArticle = item._kind === "article";
   return (
     <View style={{
       backgroundColor:C.white, borderWidth:1, borderColor:C.border, borderRadius:10,
@@ -199,7 +195,7 @@ function RankRow({ index, item, count, color, icon }) {
           {item.title}
         </Text>
         <Text style={{ fontSize:10, color:C.muted2, textTransform:"uppercase", letterSpacing:0.5, marginTop:3 }}>
-          {isArticle ? "💊 Artículo" : "📰 Noticia"} · {(item.category || "").replace(/_/g, " ") || "—"}
+          {(item.source_name || item.journal || "—")} · {(item.category || "").replace(/_/g, " ") || "—"}
         </Text>
       </View>
       <View style={{ flexDirection:"row", alignItems:"center", gap:4, paddingHorizontal:10, paddingVertical:5, backgroundColor: color === C.teal500 ? "#e6f5f1" : "#fbe5dd", borderRadius:6 }}>

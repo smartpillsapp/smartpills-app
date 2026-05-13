@@ -195,33 +195,27 @@ export default function Feed() {
       (prevReactions || []).forEach(r => { reactMap[r.article_id] = r.reaction; });
       setReactions(reactMap);
 
-      // Guardados previos (article + news)
+      // Guardados previos (todos van como "article" tras la unificación)
       const { data:savedRows } = await supabase
         .from("user_saved_content").select("content_id, content_type")
         .eq("user_id", profile.id)
-        .in("content_type", ["news", "article"]);
+        .eq("content_type", "article");
       const savedMap = {};
       (savedRows || []).forEach(r => { savedMap[r.content_id] = true; });
       setSaved(savedMap);
 
-      // Cargar pills: SIEMPRE traer los fijados (sin límite, da igual cuándo se publicaron)
-      // + los recientes (hasta 50) que no estén fijados
-      const [pinnedArtRes, recentArtRes, pinnedNewsRes, recentNewsRes] = await Promise.all([
+      // Cargar pills desde la única tabla `articles`:
+      //  - SIEMPRE los fijados (sin límite, da igual cuándo se publicaron)
+      //  - Más los 50 más recientes no fijados
+      const [pinnedArtRes, recentArtRes] = await Promise.all([
         supabase.from("articles").select("*").not("pin_position", "is", null).order("pin_position", { ascending:true }),
         supabase.from("articles").select("*").is("pin_position", null).order("published_at", { ascending:false }).limit(50),
-        supabase.from("news").select("*").not("pin_position", "is", null).order("pin_position", { ascending:true }),
-        supabase.from("news").select("*").is("pin_position", null).order("published_at", { ascending:false }).limit(50),
       ]);
 
-      const articlesData = [
+      const all = [
         ...(pinnedArtRes.data || []),
         ...(recentArtRes.data || []),
       ].map(a => ({ ...a, _source:"article" }));
-      const newsData = [
-        ...(pinnedNewsRes.data || []),
-        ...(recentNewsRes.data || []),
-      ].map(n => ({ ...n, _source:"news" }));
-      const all = [...articlesData, ...newsData];
 
       // Algoritmo de personalización: score por categoría según reacciones del usuario
       let categoryScores = {};
@@ -230,17 +224,14 @@ export default function Feed() {
         const catFromLoaded = {};
         all.forEach(a => { catFromLoaded[a.id] = a.category; });
 
-        // Para reacciones a pills NO cargados, hacemos un par de queries adicionales
+        // Para reacciones a pills NO cargados, una query adicional
         const reactedIds = prevReactions.map(r => r.article_id);
         const missingIds = reactedIds.filter(id => !catFromLoaded[id]);
         let extraCats = {};
         if(missingIds.length > 0) {
-          const [extraArt, extraNews] = await Promise.all([
-            supabase.from("articles").select("id, category").in("id", missingIds),
-            supabase.from("news").select("id, category").in("id", missingIds),
-          ]);
-          (extraArt.data || []).forEach(a => { extraCats[a.id] = a.category; });
-          (extraNews.data || []).forEach(n => { extraCats[n.id] = n.category; });
+          const { data: extraArt } = await supabase
+            .from("articles").select("id, category").in("id", missingIds);
+          (extraArt || []).forEach(a => { extraCats[a.id] = a.category; });
         }
 
         // Construir scores: like = +2, dislike = -1
@@ -314,16 +305,15 @@ export default function Feed() {
   async function handleSave(item) {
     if(!profileId) return;
     const articleId = item.id;
-    const contentType = item._source; // "article" o "news"
     const wasSaved = !!saved[articleId];
     setSaved(s => ({ ...s, [articleId]: !wasSaved }));
     try {
       if(wasSaved) {
         await supabase.from("user_saved_content").delete()
-          .eq("user_id", profileId).eq("content_id", articleId).eq("content_type", contentType);
+          .eq("user_id", profileId).eq("content_id", articleId).eq("content_type", "article");
       } else {
         await supabase.from("user_saved_content").insert({
-          user_id: profileId, content_id: articleId, content_type: contentType,
+          user_id: profileId, content_id: articleId, content_type: "article",
         });
       }
     } catch(err) {

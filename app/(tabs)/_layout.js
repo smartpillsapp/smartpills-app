@@ -30,6 +30,7 @@ function ImageTabIcon({ source, focused }) {
 
 const ICON_GUIDES  = require("../../assets/icono-guias.png");
 const ICON_TEST    = require("../../assets/icono-test.png");
+const ICON_GAMES   = require("../../assets/icono-juegos.png");
 const ICON_RANKING = require("../../assets/icono-ranking.png");
 const ICON_PROFILE = require("../../assets/icono-perfil.png");
 
@@ -53,6 +54,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index"   options={{ title:"Pills",    tabBarIcon: (p)=><PillIcon {...p}/> }}/>
       <Tabs.Screen name="guides"  options={{ title:"Guías",    tabBarIcon: (p)=><ImageTabIcon source={ICON_GUIDES}  {...p}/> }}/>
       <Tabs.Screen name="quiz"    options={{ title:"Test",     tabBarIcon: (p)=><ImageTabIcon source={ICON_TEST}    {...p}/> }}/>
+      <Tabs.Screen name="games"   options={{ title:"Juegos",   tabBarIcon: (p)=><ImageTabIcon source={ICON_GAMES}   {...p}/> }}/>
       <Tabs.Screen name="ranking" options={{ title:"Ranking",  tabBarIcon: (p)=><ImageTabIcon source={ICON_RANKING} {...p}/> }}/>
       <Tabs.Screen name="profile" options={{ title:"Perfil",   tabBarIcon: (p)=><ImageTabIcon source={ICON_PROFILE} {...p}/> }}/>
       {/* Pantalla oculta: dentro del grupo (mantiene la barra), pero no aparece como pestaña */}

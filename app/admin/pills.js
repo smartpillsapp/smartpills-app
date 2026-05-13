@@ -36,13 +36,9 @@ export default function AdminPills() {
   async function load() {
     setLoading(true);
     try {
-      const [artRes, newsRes] = await Promise.all([
-        supabase.from("articles").select("*").order("published_at", { ascending:false }),
-        supabase.from("news").select("*").order("published_at", { ascending:false }),
-      ]);
-      const articles = (artRes.data || []).map(a => ({ ...a, _kind:"article" }));
-      const news     = (newsRes.data || []).map(n => ({ ...n, _kind:"news" }));
-      const all = [...articles, ...news];
+      const { data: arts } = await supabase
+        .from("articles").select("*").order("published_at", { ascending:false });
+      const all = arts || [];
 
       // Contar likes/dislikes por pill — cargamos TODAS las reacciones (admin las ve)
       let countsByArticle = {};
@@ -68,19 +64,10 @@ export default function AdminPills() {
   }
 
   function handleNew() {
-    Alert.alert(
-      "¿Qué quieres crear?",
-      "Elige el tipo de contenido",
-      [
-        { text:"Cancelar", style:"cancel" },
-        { text:"💊 Artículo", onPress: () => router.push({ pathname:"/admin/pill-form", params:{ kind:"article" } }) },
-        { text:"📰 Noticia",  onPress: () => router.push({ pathname:"/admin/pill-form", params:{ kind:"news"    } }) },
-      ]
-    );
+    router.push("/admin/pill-form");
   }
 
   async function handleDelete(item) {
-    const table = item._kind === "article" ? "articles" : "news";
     Alert.alert(
       "¿Eliminar?",
       `Vas a borrar "${item.title}". Esta acción no se puede deshacer.`,
@@ -89,7 +76,7 @@ export default function AdminPills() {
         {
           text:"Eliminar", style:"destructive",
           onPress: async () => {
-            const { error } = await supabase.from(table).delete().eq("id", item.id);
+            const { error } = await supabase.from("articles").delete().eq("id", item.id);
             if(error) Alert.alert("Error", error.message);
             else load();
           },
@@ -163,11 +150,10 @@ export default function AdminPills() {
         ) : (
           <FlatList
             data={filtered}
-            keyExtractor={item => `${item._kind}-${item.id}`}
+            keyExtractor={item => item.id}
             contentContainerStyle={{ padding:14 }}
             renderItem={({ item }) => {
-              const isArticle = item._kind === "article";
-              const isPinned  = item.pin_position != null;
+              const isPinned = item.pin_position != null;
               return (
                 <View style={{
                   backgroundColor:C.white, borderRadius:14, padding:14, marginBottom:10,
@@ -185,14 +171,6 @@ export default function AdminPills() {
                         </Text>
                       </View>
                     )}
-                    <View style={{
-                      backgroundColor: isArticle ? C.badgeArticle : C.badgeNews,
-                      paddingHorizontal:8, paddingVertical:2, borderRadius:6,
-                    }}>
-                      <Text style={{ fontSize:10, color:"white", fontWeight:"700", letterSpacing:0.6 }}>
-                        {isArticle ? "💊 ARTÍCULO" : "📰 NOTICIA"}
-                      </Text>
-                    </View>
                     {item.category ? (
                       <Text style={{ fontSize:10, color:C.muted2, textTransform:"uppercase", letterSpacing:0.5 }}>
                         {item.category.replace(/_/g, " ")}
@@ -222,7 +200,7 @@ export default function AdminPills() {
                   <View style={{ flexDirection:"row", gap:8 }}>
                     <Pressable onPress={() => router.push({
                       pathname:"/admin/pill-form",
-                      params:{ id:item.id, kind:item._kind },
+                      params:{ id:item.id },
                     })}
                       style={({pressed}) => ({
                         flex:1, backgroundColor:"#e6e6e6", borderRadius:10, paddingVertical:9,

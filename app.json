@@ -15,11 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.smartpills.app",
-      "buildNumber": "1"
+      "bundleIdentifier": "com.smartpillsapp.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.smartpills.app",
+      "package": "com.smartpillsapp.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

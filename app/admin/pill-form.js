@@ -25,11 +25,9 @@ const CATEGORIES = [
 
 export default function PillForm() {
   const router = useRouter();
-  const { id, kind } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   const isEdit = !!id;
-  const itemKind = kind === "news" ? "news" : "article";
-  const table = itemKind === "news" ? "news" : "articles";
-  const isArticle = itemKind === "article";
+  const table = "articles";
 
   const [loading, setLoading]   = useState(isEdit);
   const [saving, setSaving]     = useState(false);
@@ -150,12 +148,10 @@ export default function PillForm() {
       pin_position: pinPosition,
     };
 
-    if(isArticle) {
-      payload.journal          = journal.trim() || null;
-      payload.extended_summary = extendedSummary.trim() || null;
-      payload.key_points       = keyPointsArr.length ? keyPointsArr : null;
-      payload.tags             = tagsArr.length ? tagsArr : null;
-    }
+    payload.journal          = journal.trim() || null;
+    payload.extended_summary = extendedSummary.trim() || null;
+    payload.key_points       = keyPointsArr.length ? keyPointsArr : null;
+    payload.tags             = tagsArr.length ? tagsArr : null;
 
     if(!isEdit) {
       payload.published_at = new Date().toISOString();
@@ -184,9 +180,7 @@ export default function PillForm() {
     );
   }
 
-  const titleLabel = isEdit
-    ? (isArticle ? "Editar artículo" : "Editar noticia")
-    : (isArticle ? "Nuevo artículo" : "Nueva noticia");
+  const titleLabel = isEdit ? "Editar pill" : "Nuevo pill";
 
   return (
     <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
@@ -198,7 +192,7 @@ export default function PillForm() {
           <Text style={{ fontSize:12, color:"white" }}>← Volver</Text>
         </Pressable>
         <Text style={{ fontSize:10, fontWeight:"500", letterSpacing:1.4, textTransform:"uppercase", color:C.teal300, marginBottom:4 }}>
-          Panel admin · {isArticle ? "Artículo" : "Noticia"}
+          Panel admin
         </Text>
         <Text style={{ fontFamily:"Georgia", fontSize:22, color:"white" }}>
           {titleLabel}
@@ -303,16 +297,12 @@ export default function PillForm() {
             placeholderTextColor={C.muted2}
             style={styles.input}/>
 
-          {/* Journal — solo artículos */}
-          {isArticle && (
-            <>
-              <Text style={styles.label}>Journal / Revista</Text>
-              <TextInput value={journal} onChangeText={setJournal}
-                placeholder="NEJM, The Lancet..."
-                placeholderTextColor={C.muted2}
-                style={styles.input}/>
-            </>
-          )}
+          {/* Journal */}
+          <Text style={styles.label}>Journal / Revista</Text>
+          <TextInput value={journal} onChangeText={setJournal}
+            placeholder="NEJM, The Lancet..."
+            placeholderTextColor={C.muted2}
+            style={styles.input}/>
 
           {/* URL fuente */}
           <Text style={styles.label}>Enlace al sitio web</Text>
@@ -346,38 +336,34 @@ export default function PillForm() {
             multiline numberOfLines={4} textAlignVertical="top"
             style={[styles.input, { height:100, paddingTop:12 }]}/>
 
-          {/* Resumen extendido — solo artículos */}
-          {isArticle && (
-            <>
-              <Text style={styles.label}>Resumen extendido (detalle)</Text>
-              <TextInput value={extendedSummary} onChangeText={setExtendedSummary}
-                placeholder="El resumen largo que se ve al abrir el pill..."
-                placeholderTextColor={C.muted2}
-                multiline numberOfLines={8} textAlignVertical="top"
-                style={[styles.input, { height:160, paddingTop:12 }]}/>
+          {/* Resumen extendido */}
+          <Text style={styles.label}>Resumen extendido (detalle)</Text>
+          <TextInput value={extendedSummary} onChangeText={setExtendedSummary}
+            placeholder="El resumen largo que se ve al abrir el pill..."
+            placeholderTextColor={C.muted2}
+            multiline numberOfLines={8} textAlignVertical="top"
+            style={[styles.input, { height:160, paddingTop:12 }]}/>
 
-              {/* Ideas clave */}
-              <Text style={styles.label}>Ideas clave</Text>
-              <TextInput value={keyPoints} onChangeText={setKeyPoints}
-                placeholder={"Una idea por línea\nMáximo 3"}
-                placeholderTextColor={C.muted2}
-                multiline numberOfLines={5} textAlignVertical="top"
-                style={[styles.input, { height:120, paddingTop:12 }]}/>
-              <Text style={{ fontSize:11, color:C.muted2, marginTop:-8, marginBottom:14 }}>
-                Una idea por línea. Solo se muestran las 3 primeras.
-              </Text>
+          {/* Ideas clave */}
+          <Text style={styles.label}>Ideas clave</Text>
+          <TextInput value={keyPoints} onChangeText={setKeyPoints}
+            placeholder={"Una idea por línea\nMáximo 3"}
+            placeholderTextColor={C.muted2}
+            multiline numberOfLines={5} textAlignVertical="top"
+            style={[styles.input, { height:120, paddingTop:12 }]}/>
+          <Text style={{ fontSize:11, color:C.muted2, marginTop:-8, marginBottom:14 }}>
+            Una idea por línea. Solo se muestran las 3 primeras.
+          </Text>
 
-              {/* Tags */}
-              <Text style={styles.label}>Tags</Text>
-              <TextInput value={tags} onChangeText={setTags}
-                placeholder="hipertensión, ECG, dosis"
-                placeholderTextColor={C.muted2}
-                style={styles.input}/>
-              <Text style={{ fontSize:11, color:C.muted2, marginTop:-8, marginBottom:14 }}>
-                Separados por comas
-              </Text>
-            </>
-          )}
+          {/* Tags */}
+          <Text style={styles.label}>Tags</Text>
+          <TextInput value={tags} onChangeText={setTags}
+            placeholder="hipertensión, ECG, dosis"
+            placeholderTextColor={C.muted2}
+            style={styles.input}/>
+          <Text style={{ fontSize:11, color:C.muted2, marginTop:-8, marginBottom:14 }}>
+            Separados por comas
+          </Text>
 
           {/* Botón guardar */}
           <Pressable onPress={handleSave} disabled={saving}
@@ -390,7 +376,7 @@ export default function PillForm() {
               <ActivityIndicator color="white"/>
             ) : (
               <Text style={{ color:"white", fontSize:14, fontWeight:"600" }}>
-                {isEdit ? "Guardar cambios" : (isArticle ? "Crear artículo" : "Crear noticia")}
+                {isEdit ? "Guardar cambios" : "Crear pill"}
               </Text>
             )}
           </Pressable>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, ScrollView, ActivityIndicator, Linking } from "react-native";
+import { View, Text, FlatList, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -19,14 +19,12 @@ const C = {
 const FILTERS = [
   { key:"all",         label:"Todo" },
   { key:"article",     label:"Pills 💊" },
-  { key:"news",        label:"Noticias 📰" },
   { key:"guide",       label:"Guías 📖" },
   { key:"infographic", label:"Infografías 🎨" },
 ];
 
 const TYPE_META = {
   article:     { color:C.teal600,    label:"💊 Pill" },
-  news:        { color:C.coral500,   label:"📰 Noticia" },
   guide:       { color:C.purple500,  label:"📖 Guía" },
   infographic: { color:C.amber500,   label:"🎨 Infografía" },
 };
@@ -125,10 +123,7 @@ export default function Saved() {
       const enriched = await Promise.all(savedItems.map(async (it) => {
         let content = null;
         if(it.content_type === "article") {
-          const { data } = await supabase.from("articles").select("title,journal,ai_summary,category,source_url").eq("id", it.content_id).single();
-          content = data;
-        } else if(it.content_type === "news") {
-          const { data } = await supabase.from("news").select("title,source_name,ai_summary,category,source_url").eq("id", it.content_id).single();
+          const { data } = await supabase.from("articles").select("title,journal,source_name,ai_summary,category,source_url").eq("id", it.content_id).single();
           content = data;
         } else if(it.content_type === "guide") {
           const { data } = await supabase.from("clinical_guides").select("title,organization,year,pdf_url").eq("id", it.content_id).single();
@@ -156,9 +151,6 @@ export default function Saved() {
   function handleOpen(item) {
     if(item.content_type === "article") {
       router.push(`/article/${item.content_id}`);
-    } else if(item.content_type === "news") {
-      // TODO: sin pantalla de detalle de news, abrimos la fuente
-      if(item.content?.source_url) Linking.openURL(item.content.source_url);
     } else if(item.content_type === "guide" || item.content_type === "infographic") {
       if(item.content?.pdf_url) {
         router.push({

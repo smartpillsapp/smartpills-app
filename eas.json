@@ -22,7 +22,7 @@
     "production": {
       "ios": {
         "appleId": "smartpillsapp@gmail.com",
-        "ascAppId": "PENDIENTE_RELLENAR_DESPUES_DE_PRIMERA_BUILD"
+        "ascAppId": "6768422488"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
