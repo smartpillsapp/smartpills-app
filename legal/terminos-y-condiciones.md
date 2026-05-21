@@ -1,13 +1,13 @@
 # Términos y Condiciones de Uso
 
-**Última actualización:** [FECHA DE ENTRADA EN VIGOR]
+**Última actualización:** 16 de mayo de 2026
 **Versión:** 1.0
 
 ---
 
 ## 1. Aceptación
 
-Estos Términos y Condiciones de Uso (en adelante, "**Términos**") regulan la relación entre **[NOMBRE O RAZÓN SOCIAL DEL TITULAR]**, con NIF/CIF [NIF/CIF] y domicilio en [DIRECCIÓN COMPLETA] (en adelante, "**el Titular**"), y cualquier persona física que se registre y utilice la aplicación móvil **SmartPills** (en adelante, "**la Aplicación**" o "**el Servicio**", y la persona registrada, "**el Usuario**").
+Estos Términos y Condiciones de Uso (en adelante, "**Términos**") regulan la relación entre **Antonio Martínez Sancho**, con NIF 53509031Z y domicilio en Calle Villabona 11 interior, 33520 Nava, Asturias, España (en adelante, "**el Titular**"), y cualquier persona física que se registre y utilice la aplicación móvil **SmartPills** (en adelante, "**la Aplicación**" o "**el Servicio**", y la persona registrada, "**el Usuario**").
 
 Al crear una cuenta, marcar la casilla de aceptación correspondiente o utilizar la Aplicación, el Usuario declara:
 
@@ -98,7 +98,7 @@ Todo el contenido de SmartPills (textos, imágenes propias, diseño, código, ma
 
 SmartPills incluye contenido elaborado por terceros (publicaciones científicas, sociedades médicas, organismos oficiales). El Titular respeta los derechos de propiedad intelectual de dichos terceros y se acoge al derecho de cita reconocido en el artículo 32 LPI. La fuente original siempre se identifica y, cuando es posible, se enlaza.
 
-Si algún titular de derechos considera vulnerados sus derechos, podrá contactar en [EMAIL DE CONTACTO] para la retirada inmediata del contenido afectado.
+Si algún titular de derechos considera vulnerados sus derechos, podrá contactar en smartpillsapp@gmail.com para la retirada inmediata del contenido afectado.
 
 ### 5.3. Contenido generado por el Usuario
 
@@ -149,15 +149,7 @@ El Usuario acepta que su nombre de usuario, profesión y, en su caso, ciudad/cen
 
 ---
 
-## 8. Suscripciones y pagos
-
-[INCLUIR ESTA CLÁUSULA SOLO SI VA A HABER PAGOS / SUSCRIPCIONES. Si no, eliminar.]
-
-En caso de que SmartPills ofrezca funcionalidades premium o de pago, el Usuario será informado de manera clara y previa del precio, periodicidad de cobro, condiciones de renovación y procedimiento de cancelación. Los pagos se procesarán a través de las plataformas de pago de Apple App Store y/o Google Play Store, conforme a las condiciones de dichas plataformas.
-
----
-
-## 9. Modificaciones
+## 8. Modificaciones
 
 El Titular podrá modificar estos Términos para adaptarlos a cambios normativos, técnicos o del propio Servicio. Las modificaciones se comunicarán dentro de la Aplicación con una antelación razonable. El uso continuado del Servicio tras la entrada en vigor de las modificaciones implicará su aceptación.
 
@@ -165,13 +157,13 @@ Si el Usuario no estuviera de acuerdo con la nueva versión, podrá cancelar su 
 
 ---
 
-## 10. Suspensión y terminación
+## 9. Suspensión y terminación
 
-### 10.1. Por el Usuario
+### 9.1. Por el Usuario
 
 El Usuario podrá cancelar su cuenta en cualquier momento desde el apartado correspondiente del perfil, lo que implicará la eliminación de sus datos personales conforme a lo dispuesto en la Política de Privacidad.
 
-### 10.2. Por el Titular
+### 9.2. Por el Titular
 
 El Titular podrá suspender o cancelar la cuenta del Usuario, total o parcialmente, sin necesidad de preaviso, en los siguientes casos:
 
@@ -184,7 +176,7 @@ La cancelación no generará derecho a indemnización a favor del Usuario, sin p
 
 ---
 
-## 11. Limitación de responsabilidad
+## 10. Limitación de responsabilidad
 
 En la medida máxima permitida por la legislación aplicable, el Titular no será responsable de:
 
@@ -199,44 +191,44 @@ Estas limitaciones no excluyen la responsabilidad del Titular por dolo, culpa gr
 
 ---
 
-## 12. Indemnización
+## 11. Indemnización
 
 El Usuario se compromete a mantener indemne al Titular frente a cualquier reclamación, sanción, daño, pérdida, gasto u honorarios de letrados que se deriven del incumplimiento por su parte de estos Términos, de la legislación aplicable o de derechos de terceros.
 
 ---
 
-## 13. Datos personales
+## 12. Datos personales
 
 El tratamiento de los datos personales del Usuario se rige por la **Política de Privacidad**, accesible dentro de la Aplicación, que cumple con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018, de Protección de Datos Personales y Garantía de los Derechos Digitales (LOPDGDD).
 
 ---
 
-## 14. Cesión
+## 13. Cesión
 
 El Usuario no podrá ceder, transmitir o subrogar sus derechos u obligaciones derivados de estos Términos sin consentimiento previo y por escrito del Titular. El Titular podrá ceder la posición contractual a terceros, en particular en el marco de operaciones societarias (fusión, escisión, venta de activos), notificándolo al Usuario.
 
 ---
 
-## 15. Nulidad parcial
+## 14. Nulidad parcial
 
 Si alguna cláusula de estos Términos fuera declarada nula o inaplicable por una autoridad competente, dicha declaración no afectará a la validez del resto. La cláusula nula se sustituirá por la disposición legal o jurisprudencial más próxima a la voluntad de las partes.
 
 ---
 
-## 16. Legislación aplicable y jurisdicción
+## 15. Legislación aplicable y jurisdicción
 
-Estos Términos se rigen por la legislación española. Para cualquier controversia derivada de la interpretación o aplicación de estos Términos, las partes, con renuncia expresa a su propio fuero si lo tuvieren, se someten a los **Juzgados y Tribunales de [CIUDAD]**, salvo que la legislación aplicable a consumidores y usuarios establezca un fuero distinto.
+Estos Términos se rigen por la legislación española. Para cualquier controversia derivada de la interpretación o aplicación de estos Términos, las partes, con renuncia expresa a su propio fuero si lo tuvieren, se someten a los **Juzgados y Tribunales de Oviedo (Asturias)**, salvo que la legislación aplicable a consumidores y usuarios establezca un fuero distinto.
 
 El Usuario consumidor podrá acudir a la plataforma europea de resolución de litigios en línea: <https://ec.europa.eu/consumers/odr>.
 
 ---
 
-## 17. Contacto
+## 16. Contacto
 
 Para cualquier consulta sobre estos Términos:
 
-- **Email:** [EMAIL DE CONTACTO]
-- **Dirección postal:** [DIRECCIÓN COMPLETA]
+- **Email:** smartpillsapp@gmail.com
+- **Dirección postal:** Calle Villabona 11 interior, 33520 Nava, Asturias, España
 
 ---
 

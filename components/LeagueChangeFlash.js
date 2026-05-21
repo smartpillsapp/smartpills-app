@@ -3,15 +3,22 @@ import { Modal, View, Text, Image, Pressable } from "react-native";
 const PILDO_URLS = {
   up:   "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo%20celebracion.png",
   down: "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo%20triste.png",
+  stay: "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo%20base.PNG",
 };
 
 export default function LeagueChangeFlash({ direction, newLeague, onDismiss }) {
-  if(!direction || !newLeague) return null;
+  if(!direction) return null;
 
-  const isUp = direction === "up";
-  const message = isUp
-    ? `¡Enhorabuena! Acabas de subir de liga, ahora competirás en ${newLeague}`
-    : `Oh no, esta semana has caído a la liga ${newLeague}`;
+  let message;
+  if(direction === "up") {
+    message = `¡Enhorabuena! Acabas de subir de liga, ahora competirás en ${newLeague}`;
+  } else if(direction === "down") {
+    message = `Oh no, esta semana has caído a la liga ${newLeague}`;
+  } else if(direction === "stay") {
+    message = `Esta semana no has conseguido subir de liga, veamos qué tal lo haces esta vez`;
+  } else {
+    return null;
+  }
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>

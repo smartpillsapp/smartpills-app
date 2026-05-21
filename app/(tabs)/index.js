@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../../lib/supabase";
+import { pickPillImage } from "../../lib/pill-images";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0",
@@ -13,24 +14,6 @@ const C = {
   white:"#ffffff",
 };
 
-const CATEGORY_IMAGES = {
-  urgencias:            "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=800&q=90",
-  enfermería:           "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=90",
-  farmacología:         "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=90",
-  cardiología:          "https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=800&q=90",
-  pediatría:            "https://images.unsplash.com/photo-1632833239869-a37e3a5806d2?w=800&q=90",
-  oncología:            "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&q=90",
-  investigación_clínica:"https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&q=90",
-  noticias_sanitarias:  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=90",
-  seguridad:            "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&q=90",
-};
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=90";
-
-const CATEGORY_COLORS = {
-  urgencias:"#c8401a", enfermería:"#3c3489", farmacología:"#1a7a69",
-  cardiología:"#1a5a8a", pediatría:"#2d7a3a", oncología:"#7a3a8a",
-  investigación_clínica:"#8a6a1a", noticias_sanitarias:"#1a7a69", seguridad:"#c8401a",
-};
 
 function timeAgo(dateString) {
   if(!dateString) return "";
@@ -44,11 +27,14 @@ function timeAgo(dateString) {
 
 async function handleShare(article) {
   try {
-    const message = `💊 ${article.title}\n\n${(article.ai_summary || "").slice(0, 140)}${(article.ai_summary || "").length > 140 ? "..." : ""}\n\n📖 Léelo en SmartPills`;
+    // URL que abre SmartPills directamente en este pill. Si la app no está
+    // instalada, la página redirectora muestra la opción de descargarla.
+    const pillUrl = `https://smartpills-legal.vercel.app/pill?id=${encodeURIComponent(article.id)}`;
+    const message = `💊 ${article.title}\n\n${(article.ai_summary || "").slice(0, 140)}${(article.ai_summary || "").length > 140 ? "..." : ""}\n\n📖 Léelo en SmartPills:\n${pillUrl}`;
     await Share.share({
       message,
-      title:   article.title,
-      url:     article.source_url || undefined,
+      title: article.title,
+      url:   pillUrl,
     });
   } catch(err) {
     console.error("Error compartiendo:", err);
@@ -71,8 +57,7 @@ function ActionButton({ icon, active, activeColor, onPress }) {
 }
 
 function ReelCard({ article, cardHeight, saved, onSave, reaction, onReact, topInset }) {
-  const imgUrl    = article.image || CATEGORY_IMAGES[article.category] || DEFAULT_IMAGE;
-  const catColor  = CATEGORY_COLORS[article.category] || "#1a7a69";
+  const imgUrl    = pickPillImage(article);
   const halfHeight = cardHeight * 0.42;
   const likeColor = "#1d9e87";
   const saveColor = "#1d9e87";
@@ -96,12 +81,15 @@ function ReelCard({ article, cardHeight, saved, onSave, reaction, onReact, topIn
         <Image source={{ uri:imgUrl }} style={{ width:"100%", height:"100%" }} resizeMode="cover"/>
 
         <LinearGradient
-          colors={["rgba(0,0,0,0.6)", "transparent"]}
-          style={{ position:"absolute", top:0, left:0, right:0, height:"35%" }}/>
-
-        <LinearGradient
-          colors={["transparent", "rgba(247,245,240,0.7)", "rgba(247,245,240,1)"]}
-          style={{ position:"absolute", bottom:0, left:0, right:0, height:"55%" }}/>
+          colors={[
+            "rgba(247,245,240,0)",
+            "rgba(247,245,240,0.15)",
+            "rgba(247,245,240,0.4)",
+            "rgba(247,245,240,0.75)",
+            "rgba(247,245,240,1)",
+          ]}
+          locations={[0, 0.35, 0.6, 0.85, 1]}
+          style={{ position:"absolute", bottom:0, left:0, right:0, height:"35%" }}/>
 
         {/* Cabecera flotante */}
         <View style={{ position:"absolute", top: topInset + 14, left:16, right:16, flexDirection:"row", justifyContent:"space-between", alignItems:"center" }}>
@@ -136,24 +124,16 @@ function ReelCard({ article, cardHeight, saved, onSave, reaction, onReact, topIn
 
       {/* Mitad inferior — texto */}
       <View style={{ flex:1, paddingHorizontal:18, paddingTop:30, paddingBottom:16 }}>
-        <View style={{ flexDirection:"row", marginBottom:8 }}>
-          <View style={{ backgroundColor:catColor, paddingHorizontal:10, paddingVertical:3, borderRadius:20 }}>
-            <Text style={{ color:"white", fontSize:9, fontWeight:"700", textTransform:"uppercase", letterSpacing:1 }}>
-              {(article.category || "").replace(/_/g, " ")}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={{ fontSize:12, fontWeight:"600", color:C.muted2, textTransform:"uppercase", letterSpacing:0.5, marginBottom:8 }}>
+        <Text style={{ fontSize:12, fontWeight:"600", color:"#e8967e", textTransform:"uppercase", letterSpacing:0.5, marginBottom:8 }}>
           {article.source_name || article.journal}
         </Text>
 
-        <Text numberOfLines={4} style={{ fontFamily:"Georgia", fontSize:18, lineHeight:24, fontWeight:"bold", color:C.ink, marginBottom:10 }}>
+        <Text numberOfLines={4} style={{ fontFamily:"Georgia", fontSize:19, lineHeight:25, fontWeight:"bold", color:C.ink, marginBottom:10 }}>
           {article.title}
         </Text>
 
         {article.ai_summary && (
-          <Text style={{ fontSize:14, lineHeight:24, color:"#4a5d55" }}>
+          <Text style={{ fontSize:16, lineHeight:26, color:"#4a5d55" }}>
             {article.ai_summary}
           </Text>
         )}

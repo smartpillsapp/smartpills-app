@@ -1,6 +1,6 @@
 # Política de Privacidad
 
-**Última actualización:** [FECHA DE ENTRADA EN VIGOR]
+**Última actualización:** 16 de mayo de 2026
 **Versión:** 1.0
 
 ---
@@ -9,20 +9,17 @@
 
 En cumplimiento del Reglamento (UE) 2016/679, de Protección de Datos (RGPD) y de la Ley Orgánica 3/2018, de Protección de Datos Personales y Garantía de los Derechos Digitales (LOPDGDD), informamos al Usuario de que el responsable del tratamiento de sus datos personales es:
 
-- **Razón social / Titular:** [NOMBRE O RAZÓN SOCIAL DEL TITULAR]
-- **NIF / CIF:** [NIF / CIF]
-- **Domicilio social:** [DIRECCIÓN COMPLETA]
-- **Correo electrónico de contacto:** [EMAIL DE CONTACTO]
-- **Datos registrales:** [Datos del Registro Mercantil, si aplica]
+- **Titular:** Antonio Martínez Sancho
+- **NIF:** 53509031Z
+- **Domicilio:** Calle Villabona 11 interior, 33520 Nava, Asturias, España
+- **Correo electrónico de contacto:** smartpillsapp@gmail.com
+- **Datos registrales:** No aplicable (persona física)
 
 (En adelante, "**el Responsable**".)
 
 ### 1.1. Delegado de Protección de Datos (DPO)
 
-[INCLUIR SOLO SI EL TITULAR HA DESIGNADO DPO. Si no es obligatorio (volumen de datos pequeño y sin tratamiento masivo de categorías especiales), eliminar esta sección o indicar "No aplicable".]
-
-- **Nombre / entidad del DPO:** [NOMBRE]
-- **Email de contacto:** [EMAIL DPO]
+No aplicable. El Titular no está obligado a designar un Delegado de Protección de Datos conforme al artículo 37 del RGPD, dado que el volumen de datos tratados es reducido y no se tratan categorías especiales de datos a gran escala.
 
 ---
 
@@ -92,10 +89,8 @@ Los datos del Usuario podrán ser comunicados o accesibles a los siguientes enca
 
 | Proveedor | Servicio prestado | Ubicación |
 |---|---|---|
-| **Supabase Inc.** | Alojamiento de base de datos, autenticación de usuarios, almacenamiento de archivos | [INDICAR REGIÓN DEL PROYECTO: ej. UE (Frankfurt) — VERIFICAR EN SUPABASE > SETTINGS > GENERAL] |
-| **[Proveedor de IA — ej. Anthropic, OpenAI]** | Generación o asistencia para resúmenes e infografías (cuando aplique). Procesa contenidos editoriales, no datos personales del Usuario | EE. UU. |
-| **[Proveedor de notificaciones push, si se usa — ej. Expo Push Notifications]** | Envío de notificaciones push | [REGIÓN] |
-| **[Proveedor de email transaccional, si se usa]** | Envío de emails de verificación y restablecimiento | [REGIÓN] |
+| **Supabase Inc.** | Alojamiento de base de datos, autenticación de usuarios, almacenamiento de archivos, envío de emails transaccionales (verificación de cuenta, restablecimiento de contraseña) | UE (Frankfurt, Alemania) |
+| **Anthropic, PBC** | Generación o asistencia editorial para resúmenes, infografías, preguntas de test y otros contenidos formativos. Procesa exclusivamente contenidos editoriales, **no datos personales del Usuario** | EE. UU. |
 | **Apple Inc. / Google LLC** | Distribución de la Aplicación a través de App Store / Google Play | EE. UU. |
 
 Todos los encargados están obligados por contrato (Data Processing Agreement) al cumplimiento del RGPD y a la implementación de medidas técnicas y organizativas adecuadas.
@@ -118,7 +113,7 @@ Algunos de los proveedores indicados pueden tratar los datos en países fuera de
 - **Cláusulas Contractuales Tipo (Standard Contractual Clauses)** aprobadas por la Comisión Europea.
 - **Marco de Privacidad de Datos UE-EE. UU. (Data Privacy Framework)** cuando el proveedor esté certificado.
 
-El Usuario podrá solicitar copia de las garantías aplicables escribiendo a [EMAIL DE CONTACTO].
+El Usuario podrá solicitar copia de las garantías aplicables escribiendo a smartpillsapp@gmail.com.
 
 ---
 
@@ -151,8 +146,8 @@ Conforme a los artículos 15 a 22 del RGPD, el Usuario tiene los siguientes dere
 El Usuario puede ejercer estos derechos:
 
 - **Desde la Aplicación:** apartado "Privacidad" del perfil, donde encontrará opciones para acceder a sus datos, modificarlos, exportarlos o cancelar su cuenta.
-- **Por correo electrónico:** dirigiéndose a [EMAIL DE CONTACTO] con asunto "Derechos RGPD" e incluyendo copia de un documento de identidad o cualquier medio de identificación equivalente.
-- **Por correo postal:** [DIRECCIÓN COMPLETA].
+- **Por correo electrónico:** dirigiéndose a smartpillsapp@gmail.com con asunto "Derechos RGPD" e incluyendo copia de un documento de identidad o cualquier medio de identificación equivalente.
+- **Por correo postal:** Calle Villabona 11 interior, 33520 Nava, Asturias, España.
 
 El Responsable responderá en el plazo máximo de **un mes** desde la recepción de la solicitud, prorrogable a dos meses adicionales si la complejidad o el número de solicitudes lo justifican.
 
@@ -200,7 +195,7 @@ Si en el futuro se incorporan herramientas de analítica o publicidad, esta pol�
 
 SmartPills está dirigido **exclusivamente a mayores de 18 años** profesionales sanitarios, en formación o estudiantes de Ciencias de la Salud. **No se recogen ni tratan deliberadamente datos de menores de edad.**
 
-Si el Responsable detecta que se ha registrado un menor de edad, procederá a eliminar la cuenta y los datos asociados. Cualquier persona puede notificar este hecho escribiendo a [EMAIL DE CONTACTO].
+Si el Responsable detecta que se ha registrado un menor de edad, procederá a eliminar la cuenta y los datos asociados. Cualquier persona puede notificar este hecho escribiendo a smartpillsapp@gmail.com.
 
 ---
 
@@ -216,9 +211,8 @@ La versión vigente está siempre disponible dentro de la Aplicación.
 
 Para cualquier consulta sobre esta Política de Privacidad o sobre el tratamiento de sus datos personales, el Usuario puede dirigirse a:
 
-- **Email:** [EMAIL DE CONTACTO]
-- **Dirección postal:** [DIRECCIÓN COMPLETA]
-- **DPO** (si aplica): [EMAIL DPO]
+- **Email:** smartpillsapp@gmail.com
+- **Dirección postal:** Calle Villabona 11 interior, 33520 Nava, Asturias, España
 
 ---
 

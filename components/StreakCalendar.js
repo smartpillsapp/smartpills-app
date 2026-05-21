@@ -1,5 +1,7 @@
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { VACCINE_ICON_URL } from "../lib/streak";
 
 const MONTHS = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -8,13 +10,33 @@ const MONTHS = [
 const DAYS_SHORT = ["L","M","X","J","V","S","D"];
 
 const COL = {
-  bg:        "#F0F4F8",  // fondo azul-grisáceo casi blanco
-  text:      "#243B53",  // azul marino para los números
-  textMuted: "#627D98",  // azul muted para etiquetas y año
-  border:    "#D9E2EC",  // gris azulado suave para bordes
+  bg:        "#F0F4F8",
+  text:      "#243B53",
+  textMuted: "#627D98",
+  border:    "#D9E2EC",
 };
 
-export default function StreakCalendar({ completedDates = [] }) {
+function toDayInMonth(dateStr, year, month) {
+  if(!dateStr) return null;
+  const d = new Date(dateStr);
+  if(d.getFullYear() === year && d.getMonth() === month) return d.getDate();
+  return null;
+}
+
+function buildSetForMonth(dates, year, month) {
+  const set = new Set();
+  for(const ds of (dates || [])) {
+    const day = toDayInMonth(ds, year, month);
+    if(day !== null) set.add(day);
+  }
+  return set;
+}
+
+export default function StreakCalendar({
+  streakDays   = [],
+  vaccineDays  = [],
+  iceDays      = [],
+}) {
   const today      = new Date();
   const year       = today.getFullYear();
   const month      = today.getMonth();
@@ -25,23 +47,15 @@ export default function StreakCalendar({ completedDates = [] }) {
   const firstDay  = new Date(year, month, 1).getDay();
   const offset    = firstDay === 0 ? 6 : firstDay - 1;
 
-  // Días completados de este mes
-  const completedSet = new Set();
-  completedDates.forEach(dateStr => {
-    const d = new Date(dateStr);
-    if(d.getFullYear() === year && d.getMonth() === month) {
-      completedSet.add(d.getDate());
-    }
-  });
+  const fireSet  = buildSetForMonth(streakDays,  year, month);
+  const vaxSet   = buildSetForMonth(vaccineDays, year, month);
+  const iceSet   = buildSetForMonth(iceDays,     year, month);
 
-  // Día más reciente de la racha (se mostrará con el icono de fuego)
-  const sortedDates = [...completedDates].sort();
-  let latestDayInMonth = null;
-  if(sortedDates.length > 0) {
-    const latest = new Date(sortedDates[sortedDates.length - 1]);
-    if(latest.getFullYear() === year && latest.getMonth() === month) {
-      latestDayInMonth = latest.getDate();
-    }
+  // Día más reciente con fuego (para destacarlo con icono)
+  const sortedFire = [...streakDays].sort();
+  let latestFireDay = null;
+  if(sortedFire.length > 0) {
+    latestFireDay = toDayInMonth(sortedFire[sortedFire.length - 1], year, month);
   }
 
   const cells = [];
@@ -89,51 +103,82 @@ export default function StreakCalendar({ completedDates = [] }) {
           if(day === null) {
             return <View key={`e${idx}`} style={{ width:`${100/7}%`, aspectRatio:1 }}/>;
           }
-          const isCompleted = completedSet.has(day);
-          const isToday     = day === todayDay;
+          const isFire = fireSet.has(day);
+          const isVax  = vaxSet.has(day) && !isFire;
+          const isIce  = iceSet.has(day) && !isFire && !isVax;
+          const isToday = day === todayDay;
 
-          return (
-            <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
-              {isCompleted ? (
+          // 🔥 día con test completado
+          if(isFire) {
+            const isLatest = day === latestFireDay;
+            return (
+              <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
                 <LinearGradient
                   colors={["#FFB347", "#FF6B35", "#E63946"]}
                   start={{x:0, y:0}} end={{x:1, y:1}}
                   style={{
-                    flex:1,
-                    borderRadius:13,
-                    alignItems:"center",
-                    justifyContent:"center",
+                    flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
                     shadowColor:"#FF6B35",
-                    shadowOpacity: day === latestDayInMonth ? 0.55 : 0.25,
-                    shadowRadius:8,
-                    shadowOffset:{ width:0, height:2 },
-                    elevation: day === latestDayInMonth ? 6 : 3,
+                    shadowOpacity: isLatest ? 0.55 : 0.25,
+                    shadowRadius:8, shadowOffset:{ width:0, height:2 },
+                    elevation: isLatest ? 6 : 3,
                   }}>
-                  {day === latestDayInMonth ? (
-                    <Text style={{ fontSize:18 }}>🔥</Text>
+                  {isLatest ? (
+                    <Ionicons name="flame" size={18} color="white"/>
                   ) : (
                     <Text style={{ fontSize:14, color:"white", fontWeight:"700" }}>{day}</Text>
                   )}
                 </LinearGradient>
-              ) : (
+              </View>
+            );
+          }
+
+          // 💉 día con vacuna usada
+          if(isVax) {
+            return (
+              <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
                 <View style={{
-                  flex:1,
-                  borderRadius:13,
-                  alignItems:"center",
-                  justifyContent:"center",
-                  backgroundColor: isToday ? "#FFFFFF" : "transparent",
-                  borderWidth:     1,
-                  borderColor:     isToday ? COL.text : COL.border,
+                  flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
+                  backgroundColor:"#d4f0eb",
+                  borderWidth:1, borderColor:"#1a7a69",
                 }}>
-                  <Text style={{
-                    fontSize:   13,
-                    color:      COL.text,
-                    fontWeight: isToday ? "700" : "500",
-                  }}>
-                    {day}
-                  </Text>
+                  <Image
+                    source={{ uri: VACCINE_ICON_URL }}
+                    style={{ width:24, height:24 }}
+                    resizeMode="contain"
+                  />
                 </View>
-              )}
+              </View>
+            );
+          }
+
+          // ❄️ día con racha rota
+          if(isIce) {
+            return (
+              <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
+                <View style={{
+                  flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
+                  backgroundColor:"#E3EEF7",
+                  borderWidth:1, borderColor:"#B6CCE0",
+                }}>
+                  <Ionicons name="snow-outline" size={18} color="#3D5A80"/>
+                </View>
+              </View>
+            );
+          }
+
+          // Día vacío (número simple)
+          return (
+            <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
+              <View style={{
+                flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
+                backgroundColor: isToday ? "#FFFFFF" : "transparent",
+                borderWidth:1, borderColor: isToday ? COL.text : COL.border,
+              }}>
+                <Text style={{ fontSize:13, color:COL.text, fontWeight: isToday ? "700" : "500" }}>
+                  {day}
+                </Text>
+              </View>
             </View>
           );
         })}

@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import { pickPillImage } from "../../lib/pill-images";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -14,25 +15,6 @@ const C = {
   border:"rgba(28,43,38,0.09)",
 };
 
-const CATEGORY_IMAGES = {
-  urgencias:            "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=800&q=90",
-  enfermería:           "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=90",
-  farmacología:         "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=90",
-  cardiología:          "https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=800&q=90",
-  pediatría:            "https://images.unsplash.com/photo-1632833239869-a37e3a5806d2?w=800&q=90",
-  oncología:            "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&q=90",
-  investigación_clínica:"https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&q=90",
-  noticias_sanitarias:  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=90",
-  seguridad:            "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&q=90",
-};
-
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=90";
-
-const CATEGORY_COLORS = {
-  urgencias:"#c8401a", enfermería:"#3c3489", farmacología:"#1a7a69",
-  cardiología:"#1a5a8a", pediatría:"#2d7a3a", oncología:"#7a3a8a",
-  investigación_clínica:"#8a6a1a", noticias_sanitarias:"#1a7a69", seguridad:"#c8401a",
-};
 
 function timeAgo(dateString) {
   if(!dateString) return "";
@@ -130,8 +112,7 @@ export default function ArticleDetail() {
     );
   }
 
-  const imgUrl   = article.image || CATEGORY_IMAGES[article.category] || DEFAULT_IMAGE;
-  const catColor = CATEGORY_COLORS[article.category] || "#1a7a69";
+  const imgUrl   = pickPillImage(article);
 
   let keyPoints = article.key_points;
   if(typeof keyPoints === "string") {
@@ -165,14 +146,6 @@ export default function ArticleDetail() {
             </View>
           </SafeAreaView>
 
-          {/* Badge categoría */}
-          <View style={{ position:"absolute", bottom:14, left:16 }}>
-            <View style={{ backgroundColor:catColor, paddingHorizontal:12, paddingVertical:4, borderRadius:20 }}>
-              <Text style={{ color:"white", fontSize:10, fontWeight:"600", textTransform:"uppercase", letterSpacing:0.8 }}>
-                {(article.category || "").replace(/_/g, " ")}
-              </Text>
-            </View>
-          </View>
         </View>
 
         {/* Contenido */}
@@ -180,14 +153,14 @@ export default function ArticleDetail() {
 
           {/* Fuente y fecha */}
           <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <Text style={{ fontSize:12, fontWeight:"600", color:C.muted2, textTransform:"uppercase", letterSpacing:0.5, flex:1 }}>
+            <Text style={{ fontSize:12, fontWeight:"600", color:"#e8967e", textTransform:"uppercase", letterSpacing:0.5, flex:1 }}>
               {article.journal || article.source_name}
             </Text>
             <Text style={{ fontSize:12, color:C.muted2 }}>{timeAgo(article.published_at)}</Text>
           </View>
 
           {/* Título */}
-          <Text style={{ fontFamily:"Georgia", fontSize:22, lineHeight:29, fontWeight:"bold", color:C.ink, marginBottom:16 }}>
+          <Text style={{ fontFamily:"Georgia", fontSize:23, lineHeight:30, fontWeight:"bold", color:C.ink, marginBottom:16 }}>
             {article.title}
           </Text>
 
@@ -225,7 +198,7 @@ export default function ArticleDetail() {
               <Text style={{ fontSize:11, fontWeight:"700", color:C.muted2, textTransform:"uppercase", letterSpacing:1, marginBottom:12 }}>
                 Resumen
               </Text>
-              <Text style={{ fontSize:15, lineHeight:25, color:"#4a5d55" }}>
+              <Text style={{ fontSize:16, lineHeight:27, color:"#4a5d55" }}>
                 {article.extended_summary || article.ai_summary}
               </Text>
             </View>

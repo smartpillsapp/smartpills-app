@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -267,8 +267,18 @@ export default function Login() {
               </Pressable>
             </View>
 
-            <Text style={{ textAlign:"center", marginTop:24, fontSize:12, color:C.muted2 }}>
-              Al registrarte aceptas los términos de uso de SmartPills
+            <Text style={{ textAlign:"center", marginTop:24, fontSize:12, color:C.muted2, lineHeight:18 }}>
+              Al registrarte aceptas los{" "}
+              <Text style={{ color:C.teal600, fontWeight:"600", textDecorationLine:"underline" }}
+                onPress={() => Linking.openURL("https://smartpills-legal.vercel.app/terminos-y-condiciones")}>
+                términos y condiciones
+              </Text>
+              {" "}y la{" "}
+              <Text style={{ color:C.teal600, fontWeight:"600", textDecorationLine:"underline" }}
+                onPress={() => Linking.openURL("https://smartpills-legal.vercel.app/politica-de-privacidad")}>
+                política de privacidad
+              </Text>
+              {" "}de SmartPills.
             </Text>
           </View>
         </ScrollView>

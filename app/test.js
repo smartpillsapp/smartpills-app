@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
+import { ensureStreakState, applyDailyTestCompletion } from "../lib/streak";
 import TestResultFlash from "../components/TestResultFlash";
 import StreakFlash from "../components/StreakFlash";
 
@@ -74,44 +75,53 @@ export default function TestScreen() {
       const { data:{ user } } = await supabase.auth.getUser();
       if(!user) return;
 
-      const { data:profileData } = await supabase
+      let { data:profileData } = await supabase
         .from("profiles").select("*").eq("auth_user_id", user.id).single();
+      // Procesar racha pendiente (vacunas / hielo) antes de seguir
+      profileData = await ensureStreakState(profileData, user.id);
       setProfile(profileData);
       setStreak(profileData?.racha_dias || 0);
 
-      // Comprueba si ya hizo este test hoy
       const today = new Date().toISOString().split("T")[0];
-      const lastDate = testKind === "general"
-        ? profileData?.ultima_vez_test_general
-        : profileData?.ultima_vez_test;
-      if(lastDate === today) {
-        setAlreadyDone(true);
-        setLoading(false);
-        return;
-      }
 
-      // Carga el reto del día
-      const prof = testKind === "general" ? "general" : (profileData?.profession || "general");
-      const { data:challengeData } = await supabase
-        .from("daily_challenges")
-        .select("*")
-        .eq("profession", prof)
-        .eq("date", today)
-        .eq("is_active", true)
-        .single();
+      if(testKind === "general") {
+        // Test General: ilimitado. Sacamos 5 preguntas aleatorias del pool.
+        const { data:randomQuestions, error:rpcErr } = await supabase
+          .rpc("get_random_general_questions", { n: 5 });
+        if(rpcErr || !randomQuestions || randomQuestions.length === 0) {
+          setChallenge(null);
+        } else {
+          setChallenge({ questions: randomQuestions });
+        }
+      } else {
+        // Reto Diario: bloqueado a una vez al día.
+        if(profileData?.ultima_vez_test === today) {
+          setAlreadyDone(true);
+          setLoading(false);
+          return;
+        }
 
-      // Si no hay para esa profesión, intentar con general
-      if(!challengeData && testKind !== "general") {
-        const { data:generalChallenge } = await supabase
+        const prof = profileData?.profession || "general";
+        const { data:challengeData } = await supabase
           .from("daily_challenges")
           .select("*")
-          .eq("profession", "general")
+          .eq("profession", prof)
           .eq("date", today)
           .eq("is_active", true)
           .single();
-        setChallenge(generalChallenge);
-      } else {
-        setChallenge(challengeData);
+
+        if(!challengeData) {
+          const { data:generalChallenge } = await supabase
+            .from("daily_challenges")
+            .select("*")
+            .eq("profession", "general")
+            .eq("date", today)
+            .eq("is_active", true)
+            .single();
+          setChallenge(generalChallenge);
+        } else {
+          setChallenge(challengeData);
+        }
       }
     } catch(err) {
       console.error("Error:", err);
@@ -135,20 +145,12 @@ export default function TestScreen() {
           updated_at:              new Date().toISOString(),
         }).eq("auth_user_id", user.id);
       } else {
-        // Reto Diario: actualiza fecha + racha
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-        const lastTest  = profile.ultima_vez_test;
-        let nuevaRacha = 1;
-        if(lastTest === yesterday) {
-          nuevaRacha = (profile.racha_dias || 0) + 1;
-        } else if(lastTest === today) {
-          nuevaRacha = profile.racha_dias || 1;
-        }
-        setNewStreak(nuevaRacha);
+        // Reto Diario: actualiza streak_days + racha + posible vacuna por hito 30d
+        const updates = applyDailyTestCompletion(profile);
+        setNewStreak(updates.racha_dias);
         await supabase.from("profiles").update({
-          ultima_vez_test: today,
-          racha_dias:      nuevaRacha,
-          updated_at:      new Date().toISOString(),
+          ...updates,
+          updated_at: new Date().toISOString(),
         }).eq("auth_user_id", user.id);
       }
 
@@ -181,7 +183,8 @@ export default function TestScreen() {
     });
     setOptionStates(newStates);
     if(isCorrect) {
-      setScore(s => { const n = s + 10; scoreRef.current = n; return n; });
+      const xpPerCorrect = testKind === "general" ? 5 : 10;
+      setScore(s => { const n = s + xpPerCorrect; scoreRef.current = n; return n; });
       setCorrect(c => c + 1);
     }
   }

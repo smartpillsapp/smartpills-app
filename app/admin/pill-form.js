@@ -17,11 +17,29 @@ const C = {
 
 const BUCKET = "pill-images";
 
-const CATEGORIES = [
-  "urgencias", "enfermería", "farmacología", "cardiología",
-  "pediatría", "oncología", "investigación_clínica",
-  "noticias_sanitarias", "seguridad",
+// Lista cerrada de categorías. Mantener sincronizada con las Edge Functions
+// (news-processor/index.ts y rss-ingester/index.ts).
+const SPECIALTIES = [
+  "Medicina Familiar y Comunitaria",
+  "Pediatría",
+  "Medicina Interna",
+  "Cardiología",
+  "Cirugía General y Digestiva",
+  "Cirugía Ortopédica y Traumatología",
+  "Obstetricia y Ginecología",
+  "Anestesiología y Dolor",
+  "Radiodiagnóstico",
+  "Dermatología",
+  "Psiquiatría",
+  "Oncología Médica",
+  "Neurología",
+  "Aparato Digestivo",
+  "Oftalmología",
+  "Enfermería",
+  "Fisioterapia",
+  "Farmacología",
 ];
+const MAX_SPECIALTIES = 4;
 
 export default function PillForm() {
   const router = useRouter();
@@ -44,10 +62,11 @@ export default function PillForm() {
   const [extendedSummary, setExtendedSummary]   = useState("");
   const [keyPoints, setKeyPoints]               = useState("");
   const [tags, setTags]                         = useState("");
+  const [specialties, setSpecialties]           = useState([]);  // array de strings
   const [image, setImage]                       = useState("");
   const [pinPosition, setPinPosition]           = useState(null); // null | 1..10
 
-  useEffect(() => { if(isEdit) load(); }, [id, kind]);
+  useEffect(() => { if(isEdit) load(); }, [id]);
 
   async function load() {
     const { data, error } = await supabase.from(table)
@@ -73,6 +92,11 @@ export default function PillForm() {
     if(!Array.isArray(kp)) kp = [];
     setKeyPoints(kp.join("\n"));
     setTags((data.tags || []).join(", "));
+    let sp = data.specialties;
+    if(typeof sp === "string") {
+      try { sp = JSON.parse(sp); } catch { sp = []; }
+    }
+    setSpecialties(Array.isArray(sp) ? sp.filter(s => SPECIALTIES.includes(s)) : []);
     setImage(data.image || "");
     setPinPosition(data.pin_position ?? null);
     setLoading(false);
@@ -86,7 +110,7 @@ export default function PillForm() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:    ImagePicker.MediaTypeOptions.Images,
+      mediaTypes:    ["images"],
       allowsEditing: true,
       quality:       0.8,
     });
@@ -152,6 +176,7 @@ export default function PillForm() {
     payload.extended_summary = extendedSummary.trim() || null;
     payload.key_points       = keyPointsArr.length ? keyPointsArr : null;
     payload.tags             = tagsArr.length ? tagsArr : null;
+    payload.specialties      = specialties.slice(0, MAX_SPECIALTIES);
 
     if(!isEdit) {
       payload.published_at = new Date().toISOString();
@@ -270,25 +295,38 @@ export default function PillForm() {
             multiline
             style={[styles.input, { minHeight:60 }]}/>
 
-          {/* Categoría */}
-          <Text style={styles.label}>Categoría</Text>
-          <View style={{ flexDirection:"row", flexWrap:"wrap", gap:6, marginBottom:14 }}>
-            {CATEGORIES.map(cat => {
-              const active = category === cat;
+          {/* Categoría — multi-select (1-4 categorías) */}
+          <Text style={styles.label}>Categoría ({specialties.length}/{MAX_SPECIALTIES})</Text>
+          <View style={{ flexDirection:"row", flexWrap:"wrap", gap:6, marginBottom:6 }}>
+            {SPECIALTIES.map(sp => {
+              const active = specialties.includes(sp);
+              const atMax  = specialties.length >= MAX_SPECIALTIES;
+              const disabled = !active && atMax;
               return (
-                <Pressable key={cat} onPress={() => setCategory(active ? "" : cat)}
+                <Pressable key={sp} disabled={disabled}
+                  onPress={() => {
+                    if(active) {
+                      setSpecialties(specialties.filter(s => s !== sp));
+                    } else if(!atMax) {
+                      setSpecialties([...specialties, sp]);
+                    }
+                  }}
                   style={{
                     paddingVertical:8, paddingHorizontal:12, borderRadius:18,
-                    backgroundColor: active ? C.teal600 : "transparent",
-                    borderWidth:1, borderColor: active ? C.teal600 : C.borderMd,
+                    backgroundColor: active ? C.coral500 : "transparent",
+                    borderWidth:1, borderColor: active ? C.coral500 : C.borderMd,
+                    opacity: disabled ? 0.4 : 1,
                   }}>
-                  <Text style={{ fontSize:12, fontWeight:"600", color: active ? "white" : C.muted, textTransform:"capitalize" }}>
-                    {cat.replace(/_/g, " ")}
+                  <Text style={{ fontSize:12, fontWeight:"600", color: active ? "white" : C.muted }}>
+                    {sp}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
+          <Text style={{ fontSize:11, color:C.muted2, marginBottom:14 }}>
+            Toca para seleccionar/deseleccionar. Máximo {MAX_SPECIALTIES} categorías por pill.
+          </Text>
 
           {/* Fuente / Source name */}
           <Text style={styles.label}>Fuente (medio)</Text>

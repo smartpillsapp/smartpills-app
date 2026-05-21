@@ -21,7 +21,7 @@ const GAMES = [
     description:"Adivina la palabra clínica letra a letra",
     emoji:"🪢",
     color:C.purple500,
-    route:null, // pendiente
+    route:"/games/ahorcado",
   },
   {
     key:"sopa",
@@ -86,16 +86,6 @@ export default function Games() {
             <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)"/>
           </Pressable>
         ))}
-
-        {/* Aviso de próximamente */}
-        <View style={{ marginTop:16, padding:14, backgroundColor:C.teal50, borderWidth:1, borderColor:C.teal100, borderRadius:10 }}>
-          <Text style={{ fontSize:12, color:C.teal600, fontWeight:"500", marginBottom:4 }}>
-            🚧 Sección en construcción
-          </Text>
-          <Text style={{ fontSize:12, color:C.muted, lineHeight:16 }}>
-            Los mini-juegos estarán disponibles muy pronto. La idea es repasar términos clínicos y farmacología en formato relajado.
-          </Text>
-        </View>
 
       </ScrollView>
     </SafeAreaView>

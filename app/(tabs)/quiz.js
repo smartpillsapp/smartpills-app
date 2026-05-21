@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { useCallback, useState } from "react";
+import { View, Text, Pressable, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import { ensureStreakState, MAX_VACCINES, VACCINE_ICON_URL, VACCINE_ICON_BW_URL } from "../../lib/streak";
 import StreakCalendar from "../../components/StreakCalendar";
 
 const C = {
@@ -22,34 +23,32 @@ export default function Quiz() {
   const router = useRouter();
   const [userProfession, setUserProfession] = useState(null);
   const [streak, setStreak] = useState(0);
-  const [completedDates, setCompletedDates] = useState([]);
+  const [streakDays, setStreakDays] = useState([]);
+  const [vaccineDays, setVaccineDays] = useState([]);
+  const [iceDays, setIceDays] = useState([]);
+  const [vaccines, setVaccines] = useState(MAX_VACCINES);
 
-  useEffect(() => { loadProfile(); }, []);
+  // Recargar perfil cada vez que se entra a la pestaña Test
+  // (necesario para que el calendario muestre el fuego al volver del reto diario)
+  useFocusEffect(useCallback(() => { loadProfile(); }, []));
 
   async function loadProfile() {
     const { data:{ user } } = await supabase.auth.getUser();
     if(!user) return;
-    const { data:profile } = await supabase
+    let { data:profile } = await supabase
       .from("profiles")
-      .select("profession, racha_dias, ultima_vez_test")
+      .select("*")
       .eq("auth_user_id", user.id)
       .single();
     if(profile) {
+      // Procesar racha pendiente (gastar vacunas o marcar hielo) antes de mostrar
+      profile = await ensureStreakState(profile, user.id);
       setUserProfession(profile.profession);
-      const racha = profile.racha_dias || 0;
-      setStreak(racha);
-
-      // Reconstruir días completados: cuenta atrás desde ultima_vez_test durante "racha" días
-      const dates = [];
-      if(profile.ultima_vez_test && racha > 0) {
-        const last = new Date(profile.ultima_vez_test);
-        for(let i = 0; i < racha; i++) {
-          const d = new Date(last);
-          d.setDate(d.getDate() - i);
-          dates.push(d.toISOString().split("T")[0]);
-        }
-      }
-      setCompletedDates(dates);
+      setStreak(profile.racha_dias || 0);
+      setStreakDays(Array.isArray(profile.streak_days)     ? profile.streak_days     : []);
+      setVaccineDays(Array.isArray(profile.streak_vaccines) ? profile.streak_vaccines : []);
+      setIceDays(Array.isArray(profile.ice_days)            ? profile.ice_days        : []);
+      setVaccines(profile.vaccines_remaining ?? MAX_VACCINES);
     }
   }
 
@@ -142,14 +141,49 @@ export default function Quiz() {
           <Text style={{ fontSize:32 }}>🌐</Text>
           <View style={{ flex:1 }}>
             <Text style={{ fontSize:15, fontWeight:"500", color:"white", marginBottom:2 }}>Test General</Text>
-            <Text style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>Todas las profesiones · Una vez al día</Text>
+            <Text style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>Repite cuando quieras · 5 XP por acierto</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)"/>
         </Pressable>
 
         {/* Calendario de racha */}
         <View style={{ marginTop:12 }}>
-          <StreakCalendar completedDates={completedDates} streak={streak}/>
+          <StreakCalendar
+            streakDays={streakDays}
+            vaccineDays={vaccineDays}
+            iceDays={iceDays}
+            streak={streak}
+          />
+        </View>
+
+        {/* Vacunas disponibles — cada una en un marco verde suave, alineado a la derecha */}
+        <View style={{
+          flexDirection:"row", alignItems:"center", justifyContent:"flex-end",
+          marginTop:8, marginRight:4, gap:8,
+        }}>
+          <Text style={{
+            fontSize:14, fontWeight:"700", color:C.coral500,
+            letterSpacing:0.3, marginRight:4,
+          }}>
+            Vacunas:
+          </Text>
+          {Array.from({ length: MAX_VACCINES }).map((_, i) => {
+            const filled = i < vaccines;
+            return (
+              <View key={i} style={{
+                width:46, height:46, borderRadius:14,
+                backgroundColor: filled ? C.teal50 : "#f3f5f4",
+                borderWidth:1.5, borderColor: filled ? C.teal300 : "#d9e0dd",
+                alignItems:"center", justifyContent:"center",
+              }}>
+                <Image
+                  source={{ uri: filled ? VACCINE_ICON_URL : VACCINE_ICON_BW_URL }}
+                  style={{ width: 32, height: 32 }}
+                  resizeMode="contain"
+                />
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>

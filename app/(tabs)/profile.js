@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, ScrollView, Image, Modal, Alert } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, ScrollView, Image, Modal, Alert, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -19,6 +19,12 @@ function capitalize(text) {
   if(!text) return "";
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+const LEGAL_LINKS = [
+  { key:"privacy",  label:"Política de privacidad",   url:"https://smartpills-legal.vercel.app/politica-de-privacidad" },
+  { key:"terms",    label:"Términos y condiciones",   url:"https://smartpills-legal.vercel.app/terminos-y-condiciones" },
+  { key:"legal",    label:"Aviso legal",              url:"https://smartpills-legal.vercel.app/aviso-legal" },
+];
 
 function StatRow({ label, value, color }) {
   return (
@@ -281,6 +287,25 @@ export default function Profile() {
             <StatRow label="XP esta semana" value={profile?.weekly_xp ?? 0} color={C.amber500}/>
             <StatRow label="Liga actual"    value={profile?.current_league || "Estudiantes"} color={C.teal600}/>
             <StatRow label="Racha"          value={`${profile?.racha_dias ?? 0} días 🔥`}/>
+          </View>
+
+          {/* Información legal */}
+          <Text style={{ fontSize:11, fontWeight:"500", letterSpacing:1.2, textTransform:"uppercase", color:C.muted2, marginBottom:8 }}>
+            Información legal
+          </Text>
+          <View style={{ backgroundColor:C.white, borderWidth:1, borderColor:C.border, borderRadius:12, marginBottom:24, overflow:"hidden" }}>
+            {LEGAL_LINKS.map((item, idx) => (
+              <Pressable key={item.key} onPress={() => Linking.openURL(item.url)}
+                style={({pressed}) => ({
+                  flexDirection:"row", alignItems:"center", paddingHorizontal:14, paddingVertical:14,
+                  borderTopWidth: idx === 0 ? 0 : 1, borderTopColor: C.border,
+                  backgroundColor: pressed ? C.teal50 : "transparent",
+                })}>
+                <Ionicons name="document-text-outline" size={18} color={C.teal600} style={{ marginRight:12 }}/>
+                <Text style={{ flex:1, fontSize:14, color:C.ink }}>{item.label}</Text>
+                <Ionicons name="open-outline" size={16} color={C.muted2}/>
+              </Pressable>
+            ))}
           </View>
 
           <Pressable onPress={handleLogout}

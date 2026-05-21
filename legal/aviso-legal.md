@@ -1,6 +1,6 @@
 # Aviso Legal
 
-**Última actualización:** [FECHA DE ENTRADA EN VIGOR — ej. 7 de mayo de 2026]
+**Última actualización:** 16 de mayo de 2026
 **Versión:** 1.0
 
 ---
@@ -9,12 +9,11 @@
 
 En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa de los siguientes datos identificativos del titular de la aplicación móvil **SmartPills** (en adelante, "**la Aplicación**" o "**SmartPills**"):
 
-- **Titular:** [NOMBRE O RAZÓN SOCIAL DEL TITULAR]
-- **NIF / CIF:** [NIF / CIF]
-- **Domicilio social:** [DIRECCIÓN COMPLETA: calle, nº, piso, código postal, municipio, provincia, país]
-- **Datos registrales:** [Datos del Registro Mercantil — solo si es persona jurídica: tomo, folio, hoja, inscripción]
-- **Correo electrónico de contacto:** [EMAIL DE CONTACTO]
-- **Teléfono de contacto:** [TELÉFONO, opcional]
+- **Titular:** Antonio Martínez Sancho
+- **NIF:** 53509031Z
+- **Domicilio:** Calle Villabona 11 interior, 33520 Nava, Asturias, España
+- **Datos registrales:** No aplicable (persona física)
+- **Correo electrónico de contacto:** smartpillsapp@gmail.com
 
 (En adelante, "**el Titular**".)
 
@@ -73,7 +72,7 @@ SmartPills cita, enlaza o resume contenidos elaborados por terceros (publicacion
 - Se enlaza a la fuente cuando es posible.
 - No se reproducen obras protegidas en su integridad sin autorización.
 
-Si algún titular de derechos considera que algún contenido vulnera sus derechos, puede contactar con el Titular en [EMAIL DE CONTACTO] para su retirada inmediata.
+Si algún titular de derechos considera que algún contenido vulnera sus derechos, puede contactar con el Titular en smartpillsapp@gmail.com para su retirada inmediata.
 
 ### 5.3. Licencia de uso
 
@@ -132,7 +131,7 @@ El Titular se reserva el derecho a suspender, modificar o discontinuar la Aplica
 
 ## 11. Legislación aplicable y jurisdicción
 
-Las presentes condiciones se rigen por la legislación española. Para la resolución de cualquier controversia que pudiera derivarse del acceso o uso de la Aplicación, las partes, con renuncia expresa a su propio fuero, se someten a los **Juzgados y Tribunales de [CIUDAD del domicilio social del Titular — ej. Madrid]**, salvo que la legislación aplicable a consumidores establezca otra cosa.
+Las presentes condiciones se rigen por la legislación española. Para la resolución de cualquier controversia que pudiera derivarse del acceso o uso de la Aplicación, las partes, con renuncia expresa a su propio fuero, se someten a los **Juzgados y Tribunales de Oviedo (Asturias)**, salvo que la legislación aplicable a consumidores establezca otra cosa.
 
 En caso de que el Usuario sea consumidor, podrá acudir a la plataforma europea de resolución de litigios en línea: <https://ec.europa.eu/consumers/odr>.
 
@@ -142,8 +141,8 @@ En caso de que el Usuario sea consumidor, podrá acudir a la plataforma europea 
 
 Para cualquier consulta relativa a este Aviso Legal, el Usuario puede dirigirse a:
 
-- **Email:** [EMAIL DE CONTACTO]
-- **Dirección postal:** [DIRECCIÓN COMPLETA]
+- **Email:** smartpillsapp@gmail.com
+- **Dirección postal:** Calle Villabona 11 interior, 33520 Nava, Asturias, España
 
 ---
 

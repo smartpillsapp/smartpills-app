@@ -6,7 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
-import { getTimeUntilReset, getLeagueImage } from "../../lib/leagues";
+import { getTimeUntilReset, getLeagueImage, LEAGUES } from "../../lib/leagues";
+import LeagueChangeFlash from "../../components/LeagueChangeFlash";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -113,6 +114,8 @@ export default function Ranking() {
   const [profileId, setProfileId]     = useState(null);
   const [userLeague, setUserLeague]   = useState(null);
   const [timeLeft, setTimeLeft]       = useState(getTimeUntilReset());
+  const [leagueChange, setLeagueChange] = useState(null);
+  const [authUserId, setAuthUserId]   = useState(null);
 
   useEffect(() => { loadProfile(); }, []);
   useEffect(() => {
@@ -128,17 +131,50 @@ export default function Ranking() {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
       if(!user) return;
+      setAuthUserId(user.id);
       const { data:profile } = await supabase
         .from("profiles")
-        .select("id, current_league")
+        .select("id, current_league, previous_league")
         .eq("auth_user_id", user.id)
         .single();
       if(profile) {
         setProfileId(profile.id);
         setUserLeague(profile.current_league || "Estudiantes");
+
+        // Detectar cambio/no-cambio de liga después del reset semanal.
+        // Solo mostramos el flash si previous_league NO está vacío (lo
+        // resetea el cron semanal con la liga anterior — incluso si es igual).
+        if(profile.previous_league) {
+          const cur = profile.current_league;
+          const prev = profile.previous_league;
+          let direction;
+          if(prev === cur) {
+            direction = "stay";
+          } else {
+            const oldIdx = LEAGUES.indexOf(prev);
+            const newIdx = LEAGUES.indexOf(cur);
+            if(oldIdx < 0 || newIdx < 0) return;
+            direction = newIdx > oldIdx ? "up" : "down";
+          }
+          setLeagueChange({ direction, newLeague: cur });
+        }
       }
     } catch(err) {
       console.error("Error perfil:", err);
+    }
+  }
+
+  async function dismissLeagueChange() {
+    setLeagueChange(null);
+    if(authUserId) {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ previous_league: null })
+          .eq("auth_user_id", authUserId);
+      } catch(err) {
+        console.warn("No se pudo limpiar previous_league:", err?.message);
+      }
     }
   }
 
@@ -195,6 +231,15 @@ export default function Ranking() {
   return (
     <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
       <StatusBar style="light"/>
+
+      {/* Flash de cambio de liga (subir / bajar / mantenerse) */}
+      {leagueChange && (
+        <LeagueChangeFlash
+          direction={leagueChange.direction}
+          newLeague={leagueChange.newLeague}
+          onDismiss={dismissLeagueChange}
+        />
+      )}
 
       {/* Cabecera */}
       <View style={{ backgroundColor:C.teal800, paddingHorizontal:16, paddingTop:14, paddingBottom:14 }}>

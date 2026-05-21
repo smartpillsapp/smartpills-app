@@ -30,6 +30,7 @@ const C = {
   coral300:   "#e8967e",
   coral100:   "#fae8e2",
   coral50:    "#fdf4f1",
+  amber500:   "#d97706",
   sand:       "#efe3cf",    // arena de fondo
   sandLight:  "#f7eedd",    // tablero
   ink:        "#1c2b26",
@@ -134,14 +135,41 @@ function generateGrid(words) {
   return { grid, placements };
 }
 
+// Selecciona 11 palabras con MIX equilibrado por longitud para que haya variedad
+// de direcciones (las muy largas solo caben vertical; las cortas y medias caben
+// en cualquier dirección).
+function pickBalancedWords(allWords) {
+  const short  = allWords.filter(w => w.length <= 5);                       // 3-5 letras
+  const medium = allWords.filter(w => w.length >= 6 && w.length <= 7);     // 6-7 letras
+  const long   = allWords.filter(w => w.length >= 8 && w.length <= 9);     // 8-9 letras
+  const xlong  = allWords.filter(w => w.length >= 10);                      // 10+ letras
+
+  // Cuotas: 4 cortas + 3 medias + 2 largas + 2 extra-largas = 11
+  const selected = [
+    ...shuffle(short).slice(0, 4),
+    ...shuffle(medium).slice(0, 3),
+    ...shuffle(long).slice(0, 2),
+    ...shuffle(xlong).slice(0, 2),
+  ];
+
+  // Si alguna categoría no tenía suficiente, completar con cualquier otra
+  if (selected.length < WORDS_PER_PUZZLE) {
+    const set = new Set(selected);
+    const rest = shuffle(allWords).filter(w => !set.has(w));
+    while (selected.length < WORDS_PER_PUZZLE && rest.length) {
+      selected.push(rest.pop());
+    }
+  }
+  return selected.slice(0, WORDS_PER_PUZZLE);
+}
+
 function buildPuzzle(allWords) {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const selected = shuffle(allWords).slice(0, WORDS_PER_PUZZLE);
+    const selected = pickBalancedWords(allWords);
     const { grid, placements } = generateGrid(selected);
     if (placements.length >= WORDS_PER_PUZZLE - 1) return { grid, placements };
   }
-  const selected = shuffle(allWords).slice(0, WORDS_PER_PUZZLE);
-  return generateGrid(selected);
+  return generateGrid(pickBalancedWords(allWords));
 }
 
 // ── Dimensiones (sin scroll, tablero adaptativo) ──────────────────────
@@ -171,6 +199,7 @@ export default function SopaLetras() {
   const endRef   = useRef(null);
   const foundRef = useRef([]);
   foundRef.current = foundWords;
+  const xpAwardedRef = useRef(false);
   // El PanResponder se crea solo una vez (closure captura estado inicial).
   // Para que handleEnd vea el puzzle CARGADO, usamos una ref que siempre apunta al actual.
   const puzzleRef = useRef(null);
@@ -188,6 +217,31 @@ export default function SopaLetras() {
       return () => clearTimeout(t);
     }
   }, [puzzle]);
+
+  const isComplete = puzzle && foundWords.length === puzzle.placements.length;
+
+  useEffect(() => {
+    if(isComplete && !xpAwardedRef.current) {
+      xpAwardedRef.current = true;
+      grantWinXp();
+    }
+  }, [isComplete]);
+
+  async function grantWinXp() {
+    const XP = 3;
+    try {
+      const { data:{ user } } = await supabase.auth.getUser();
+      if(!user) return;
+      await supabase.rpc("add_xp_typed", {
+        user_id: user.id, xp_delta: XP, test_type: "game",
+      });
+      await supabase.rpc("add_weekly_xp", {
+        target_uid: user.id, delta: XP,
+      });
+    } catch(err) {
+      console.warn("Sopa XP error:", err);
+    }
+  }
 
   async function loadAndGenerate() {
     setLoading(true);
@@ -217,6 +271,7 @@ export default function SopaLetras() {
     setStartCell(null); setEndCell(null);
     setDragging(false);
     startRef.current = null; endRef.current = null;
+    xpAwardedRef.current = false;
     loadAndGenerate();
   }
 
@@ -401,6 +456,7 @@ export default function SopaLetras() {
         <View style={styles.wordsHeader}>
           <Text style={styles.wordsTitle}>
             {allFound ? "🎉 ¡Completado!" : "Palabras a encontrar"}
+            {allFound && <Text style={styles.xpBadge}>  +3 XP</Text>}
           </Text>
           <Text style={styles.wordsTag}>
             {foundWords.length}/{puzzle.placements.length}
@@ -507,6 +563,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: C.teal800,
+  },
+  xpBadge: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: C.amber500,
   },
   wordsTag: {
     fontSize: 13,

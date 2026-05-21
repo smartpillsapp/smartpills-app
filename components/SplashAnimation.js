@@ -54,7 +54,7 @@ export default function SplashAnimation({ onFinish }) {
       ) : (
         <Animated.Image
           source={require("../assets/logo-smartpills.png")}
-          style={{ width: 220, height: 220, opacity: logoOpacity }}
+          style={{ width: 264, height: 264, opacity: logoOpacity }}
           resizeMode="contain"
         />
       )}
