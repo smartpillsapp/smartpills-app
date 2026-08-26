@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
-import { Image } from "react-native";
+import { Image, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const C = {
   teal600: "#1a7a69",
@@ -35,6 +36,9 @@ const ICON_RANKING = require("../../assets/icono-ranking.png");
 const ICON_PROFILE = require("../../assets/icono-perfil.png");
 
 export default function TabsLayout() {
+  const insets      = useSafeAreaInsets();
+  const extraBottom = Platform.OS === "android" ? insets.bottom : 0;
+
   return (
     <Tabs
       screenOptions={{
@@ -45,9 +49,9 @@ export default function TabsLayout() {
           backgroundColor: C.white,
           borderTopColor:  C.border,
           borderTopWidth:  1,
-          height: 74,
-          paddingTop: 6,
-          paddingBottom: 8,
+          height:        74 + extraBottom,
+          paddingTop:    6,
+          paddingBottom: 8 + extraBottom,
         },
         tabBarLabelStyle: { fontSize: 10, fontWeight: "500", marginTop: 4 },
       }}>

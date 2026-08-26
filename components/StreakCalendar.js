@@ -61,6 +61,11 @@ export default function StreakCalendar({
   const cells = [];
   for(let i = 0; i < offset; i++)        cells.push(null);
   for(let d = 1; d <= daysInMonth; d++)  cells.push(d);
+  // Rellenar la última fila con huecos para que sea siempre de 7. Sin esto,
+  // los porcentajes 100/7 sufren redondeo y el domingo se sale a otra fila.
+  while(cells.length % 7 !== 0) cells.push(null);
+  const rows = [];
+  for(let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
 
   return (
     <View style={{
@@ -97,91 +102,98 @@ export default function StreakCalendar({
         ))}
       </View>
 
-      {/* Grid del calendario */}
-      <View style={{ flexDirection:"row", flexWrap:"wrap" }}>
-        {cells.map((day, idx) => {
-          if(day === null) {
-            return <View key={`e${idx}`} style={{ width:`${100/7}%`, aspectRatio:1 }}/>;
-          }
-          const isFire = fireSet.has(day);
-          const isVax  = vaxSet.has(day) && !isFire;
-          const isIce  = iceSet.has(day) && !isFire && !isVax;
-          const isToday = day === todayDay;
+      {/* Grid del calendario — filas explícitas con flex:1 en cada celda para
+          evitar el redondeo de los porcentajes 100/7, que en iPhone 13 hacía
+          que el domingo se saliese a la siguiente fila. */}
+      <View>
+        {rows.map((row, rowIdx) => (
+          <View key={rowIdx} style={{ flexDirection:"row" }}>
+            {row.map((day, colIdx) => {
+              const cellKey = day != null ? `d${day}` : `e${rowIdx}-${colIdx}`;
+              if(day === null) {
+                return <View key={cellKey} style={{ flex:1, aspectRatio:1 }}/>;
+              }
+              const isFire = fireSet.has(day);
+              const isVax  = vaxSet.has(day) && !isFire;
+              const isIce  = iceSet.has(day) && !isFire && !isVax;
+              const isToday = day === todayDay;
 
-          // 🔥 día con test completado
-          if(isFire) {
-            const isLatest = day === latestFireDay;
-            return (
-              <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
-                <LinearGradient
-                  colors={["#FFB347", "#FF6B35", "#E63946"]}
-                  start={{x:0, y:0}} end={{x:1, y:1}}
-                  style={{
+              // 🔥 día con test completado
+              if(isFire) {
+                const isLatest = day === latestFireDay;
+                return (
+                  <View key={cellKey} style={{ flex:1, aspectRatio:1, padding:3 }}>
+                    <LinearGradient
+                      colors={["#FFB347", "#FF6B35", "#E63946"]}
+                      start={{x:0, y:0}} end={{x:1, y:1}}
+                      style={{
+                        flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
+                        shadowColor:"#FF6B35",
+                        shadowOpacity: isLatest ? 0.55 : 0.25,
+                        shadowRadius:8, shadowOffset:{ width:0, height:2 },
+                        elevation: isLatest ? 6 : 3,
+                      }}>
+                      {isLatest ? (
+                        <Ionicons name="flame" size={18} color="white"/>
+                      ) : (
+                        <Text style={{ fontSize:14, color:"white", fontWeight:"700" }}>{day}</Text>
+                      )}
+                    </LinearGradient>
+                  </View>
+                );
+              }
+
+              // 💉 día con vacuna usada
+              if(isVax) {
+                return (
+                  <View key={cellKey} style={{ flex:1, aspectRatio:1, padding:3 }}>
+                    <View style={{
+                      flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
+                      backgroundColor:"#d4f0eb",
+                      borderWidth:1, borderColor:"#1a7a69",
+                    }}>
+                      <Image
+                        source={{ uri: VACCINE_ICON_URL }}
+                        style={{ width:24, height:24 }}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  </View>
+                );
+              }
+
+              // ❄️ día con racha rota
+              if(isIce) {
+                return (
+                  <View key={cellKey} style={{ flex:1, aspectRatio:1, padding:3 }}>
+                    <View style={{
+                      flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
+                      backgroundColor:"#E3EEF7",
+                      borderWidth:1, borderColor:"#B6CCE0",
+                    }}>
+                      <Ionicons name="snow-outline" size={18} color="#3D5A80"/>
+                    </View>
+                  </View>
+                );
+              }
+
+              // Día vacío (número simple)
+              return (
+                <View key={cellKey} style={{ flex:1, aspectRatio:1, padding:3 }}>
+                  <View style={{
                     flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
-                    shadowColor:"#FF6B35",
-                    shadowOpacity: isLatest ? 0.55 : 0.25,
-                    shadowRadius:8, shadowOffset:{ width:0, height:2 },
-                    elevation: isLatest ? 6 : 3,
+                    backgroundColor: isToday ? "#FFFFFF" : "transparent",
+                    borderWidth:1, borderColor: isToday ? COL.text : COL.border,
                   }}>
-                  {isLatest ? (
-                    <Ionicons name="flame" size={18} color="white"/>
-                  ) : (
-                    <Text style={{ fontSize:14, color:"white", fontWeight:"700" }}>{day}</Text>
-                  )}
-                </LinearGradient>
-              </View>
-            );
-          }
-
-          // 💉 día con vacuna usada
-          if(isVax) {
-            return (
-              <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
-                <View style={{
-                  flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
-                  backgroundColor:"#d4f0eb",
-                  borderWidth:1, borderColor:"#1a7a69",
-                }}>
-                  <Image
-                    source={{ uri: VACCINE_ICON_URL }}
-                    style={{ width:24, height:24 }}
-                    resizeMode="contain"
-                  />
+                    <Text style={{ fontSize:13, color:COL.text, fontWeight: isToday ? "700" : "500" }}>
+                      {day}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            );
-          }
-
-          // ❄️ día con racha rota
-          if(isIce) {
-            return (
-              <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
-                <View style={{
-                  flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
-                  backgroundColor:"#E3EEF7",
-                  borderWidth:1, borderColor:"#B6CCE0",
-                }}>
-                  <Ionicons name="snow-outline" size={18} color="#3D5A80"/>
-                </View>
-              </View>
-            );
-          }
-
-          // Día vacío (número simple)
-          return (
-            <View key={day} style={{ width:`${100/7}%`, aspectRatio:1, padding:3 }}>
-              <View style={{
-                flex:1, borderRadius:13, alignItems:"center", justifyContent:"center",
-                backgroundColor: isToday ? "#FFFFFF" : "transparent",
-                borderWidth:1, borderColor: isToday ? COL.text : COL.border,
-              }}>
-                <Text style={{ fontSize:13, color:COL.text, fontWeight: isToday ? "700" : "500" }}>
-                  {day}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
+              );
+            })}
+          </View>
+        ))}
       </View>
 
     </View>

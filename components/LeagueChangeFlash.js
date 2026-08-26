@@ -4,13 +4,22 @@ const PILDO_URLS = {
   up:   "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo%20celebracion.png",
   down: "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo%20triste.png",
   stay: "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo%20base.PNG",
+  king: "https://utzwotmcocrrkldhcknd.supabase.co/storage/v1/object/public/assets/Pildo_rey-removebg-preview.png",
 };
 
-export default function LeagueChangeFlash({ direction, newLeague, onDismiss }) {
+const KING_MESSAGES = {
+  1: "Enhorabuena, has alcanzado la excelencia académica. Pero no es el fin del camino! Sigue luchando para que nadie te quite la gloria.",
+  2: "Enhorabuena, has llegado al olimpo de los sanitarios, siento decirte que hay alguien aún mejor, lucha la siguiente semana para alcanzar la gloria.",
+  3: "Enhorabuena, has llegando al olimpo de los sanitarios, pero siento decirte que 2 personas lo han hecho aún mejor, sigue luchando para alcanzar la gloria.",
+};
+
+export default function LeagueChangeFlash({ direction, newLeague, kingRank, onDismiss }) {
   if(!direction) return null;
 
   let message;
-  if(direction === "up") {
+  if(direction === "king") {
+    message = KING_MESSAGES[kingRank] || KING_MESSAGES[3];
+  } else if(direction === "up") {
     message = `¡Enhorabuena! Acabas de subir de liga, ahora competirás en ${newLeague}`;
   } else if(direction === "down") {
     message = `Oh no, esta semana has caído a la liga ${newLeague}`;

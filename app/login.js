@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
+import { useApp } from "../lib/app-context";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -21,6 +22,7 @@ function validatePassword(pwd) {
 }
 
 export default function Login() {
+  const { reloadProfile }                     = useApp();
   const [mode, setMode]                       = useState("login"); // "login" | "register"
   const [email, setEmail]                     = useState("");
   const [username, setUsername]               = useState("");
@@ -31,6 +33,24 @@ export default function Login() {
   const [loading, setLoading]                 = useState(false);
   const [error, setError]                     = useState(null);
   const [success, setSuccess]                 = useState(null);
+
+  // Verificación por código de 6 dígitos
+  const [awaitingCode, setAwaitingCode] = useState(false);
+  const [code, setCode]                 = useState("");
+  const [resendIn, setResendIn]         = useState(0); // segundos de bloqueo del botón reenviar
+
+  // Flujo "olvidé mi contraseña"
+  const [forgotMode, setForgotMode]       = useState(false);
+  const [forgotStep, setForgotStep]       = useState("email"); // "email" | "verify" | "newPassword"
+  const [forgotEmail, setForgotEmail]     = useState("");
+  const [newPassword, setNewPassword]     = useState("");
+  const [confirmNew, setConfirmNew]       = useState("");
+
+  useEffect(() => {
+    if(resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   const passwordCheck  = validatePassword(password);
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
@@ -44,7 +64,18 @@ export default function Login() {
   async function handleLogin() {
     setLoading(true); setError(null); setSuccess(null);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if(error) setError(error.message);
+    if(error) {
+      // Si el email aún no está confirmado, ofrecemos reenviar el código en vez
+      // de dejar al usuario bloqueado con un error críptico.
+      if(/confirm/i.test(error.message)) {
+        await supabase.auth.resend({ type: "signup", email: email.trim() });
+        setAwaitingCode(true);
+        setResendIn(30);
+        setSuccess(`Tu correo aún no está verificado. Te hemos enviado un código a ${email.trim()}.`);
+      } else {
+        setError(error.message);
+      }
+    }
     setLoading(false);
   }
 
@@ -60,32 +91,141 @@ export default function Login() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email:    email.trim(),
       password,
+      options: {
+        data: {
+          username:         username.trim(),
+          colegiado_number: colegiado.trim() || null,
+          age_confirmed:    true,
+        },
+      },
     });
     if(signUpError) { setError(signUpError.message); setLoading(false); return; }
 
-    if(data.user) {
+    // Supabase, por seguridad, devuelve un usuario con identities vacío cuando el
+    // email YA existe y está confirmado (no reenvía nada). Lo tratamos como tal.
+    if(data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setError("Ese correo ya tiene una cuenta. Inicia sesión.");
+      setMode("login");
+      setLoading(false);
+      return;
+    }
+
+    // Usuario creado sin confirmar: pasamos a la pantalla del código.
+    setCode("");
+    setAwaitingCode(true);
+    setResendIn(30);
+    setSuccess(`Te hemos enviado un código de 6 dígitos a ${email.trim()}.`);
+    setLoading(false);
+  }
+
+  async function handleVerifyCode() {
+    setLoading(true); setError(null); setSuccess(null);
+
+    const token = code.trim();
+    if(token.length !== 6) {
+      setError("El código tiene 6 dígitos.");
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token,
+      type:  "signup",
+    });
+    if(verifyError) { setError("Código incorrecto o caducado. Revísalo o pide uno nuevo."); setLoading(false); return; }
+
+    // Ya hay sesión: creamos el perfil (mismo insert de siempre, ahora con auth.uid()
+    // disponible para las políticas RLS). upsert evita duplicar si ya existiera.
+    const user = data.user || (await supabase.auth.getUser()).data.user;
+    if(user) {
       const cleanUsername = username.trim();
-      const { error: profileError } = await supabase.from("profiles").insert({
-        auth_user_id:     data.user.id,
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        auth_user_id:     user.id,
         username:         cleanUsername,
         full_name:        cleanUsername,
         colegiado_number: colegiado.trim() || null,
         age_confirmed_at: new Date().toISOString(),
-      });
-      if(profileError) {
-        setError(profileError.message);
-      } else {
-        setSuccess(`¡Casi listo! Te hemos enviado un enlace de confirmación a ${email.trim()}. Pulsa el enlace y luego inicia sesión.`);
-        // Limpiar campos sensibles
-        setUsername(""); setPassword(""); setConfirmPassword(""); setColegiado(""); setAgeConfirmed(false);
-        setMode("login");
-      }
+      }, { onConflict: "auth_user_id", ignoreDuplicates: true });
+      if(profileError) { setError(profileError.message); setLoading(false); return; }
     }
+
+    await reloadProfile(); // refresca el perfil en el layout para que navegue a onboarding
     setLoading(false);
+  }
+
+  async function handleResendCode() {
+    if(resendIn > 0) return;
+    setError(null); setSuccess(null);
+    const { error } = await supabase.auth.resend({ type: "signup", email: email.trim() });
+    if(error) setError(error.message);
+    else { setSuccess(`Código reenviado a ${email.trim()}.`); setResendIn(30); }
+  }
+
+  function backFromCode() {
+    setAwaitingCode(false);
+    setCode("");
+    setError(null);
+    setSuccess(null);
+  }
+
+  async function handleForgotSendOtp() {
+    const trimmed = forgotEmail.trim();
+    if(!trimmed.includes("@")) { setError("Introduce un email válido."); return; }
+    setLoading(true); setError(null); setSuccess(null);
+    const { error } = await supabase.auth.signInWithOtp({ email: trimmed, options: { shouldCreateUser: false } });
+    if(error) { setError("No encontramos ninguna cuenta con ese email."); setLoading(false); return; }
+    setForgotStep("verify");
+    setResendIn(30);
+    setSuccess(`Te hemos enviado un código a ${trimmed}.`);
+    setLoading(false);
+  }
+
+  async function handleForgotVerifyOtp() {
+    const token = code.trim();
+    if(token.length !== 6) { setError("El código tiene 6 dígitos."); return; }
+    setLoading(true); setError(null); setSuccess(null);
+    const { error } = await supabase.auth.verifyOtp({ email: forgotEmail.trim(), token, type: "email" });
+    if(error) { setError("Código incorrecto o caducado. Pide uno nuevo."); setLoading(false); return; }
+    setForgotStep("newPassword");
+    setSuccess(null);
+    setLoading(false);
+  }
+
+  async function handleForgotResendOtp() {
+    if(resendIn > 0) return;
+    setError(null); setSuccess(null);
+    const { error } = await supabase.auth.signInWithOtp({ email: forgotEmail.trim(), options: { shouldCreateUser: false } });
+    if(error) setError(error.message);
+    else { setSuccess(`Código reenviado a ${forgotEmail.trim()}.`); setResendIn(30); }
+  }
+
+  async function handleSetNewPassword() {
+    const pwdCheck = validatePassword(newPassword);
+    if(!pwdCheck.valid) { setError(pwdCheck.msg); return; }
+    if(newPassword !== confirmNew) { setError("Las contraseñas no coinciden."); return; }
+    setLoading(true); setError(null);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if(error) { setError(error.message); setLoading(false); return; }
+    // Sesión activa → el layout detecta usuario y navega al home automáticamente
+    setLoading(false);
+  }
+
+  function resetForgotFlow() {
+    setForgotMode(false);
+    setForgotStep("email");
+    setForgotEmail("");
+    setNewPassword("");
+    setConfirmNew("");
+    setCode("");
+    setError(null);
+    setSuccess(null);
   }
 
   function switchMode(newMode) {
     setMode(newMode);
+    setAwaitingCode(false);
+    setCode("");
     setError(null);
     setSuccess(null);
   }
@@ -109,7 +249,8 @@ export default function Login() {
           {/* Formulario */}
           <View style={{ flex:1, paddingHorizontal:24, paddingTop:32, paddingBottom:32 }}>
 
-            {/* Toggle Login / Registro */}
+            {/* Toggle Login / Registro — oculto durante la verificación y el flujo de recuperar contraseña */}
+            {!awaitingCode && !forgotMode && (
             <View style={{ flexDirection:"row", backgroundColor:"white", borderWidth:1, borderColor:C.border, borderRadius:12, padding:4, marginBottom:24, gap:4 }}>
               {[{key:"login",label:"Iniciar sesión"},{key:"register",label:"Crear cuenta"}].map(opt=>(
                 <Pressable key={opt.key} onPress={()=>switchMode(opt.key)}
@@ -118,6 +259,7 @@ export default function Login() {
                 </Pressable>
               ))}
             </View>
+            )}
 
             {error && (
               <View style={{ backgroundColor:C.coral50, borderWidth:1, borderColor:C.coral300, borderRadius:8, padding:10, marginBottom:16 }}>
@@ -131,6 +273,48 @@ export default function Login() {
               </View>
             )}
 
+            {/* Pantalla de verificación por código */}
+            {awaitingCode && (
+              <View style={{ gap:14 }}>
+                <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.ink }}>
+                  Verifica tu correo
+                </Text>
+                <Text style={{ fontSize:13, color:C.muted, lineHeight:19 }}>
+                  Escribe el código de 6 dígitos que hemos enviado a{" "}
+                  <Text style={{ fontWeight:"700", color:C.ink }}>{email.trim()}</Text>. Revisa también la carpeta de spam.
+                </Text>
+                <TextInput value={code} onChangeText={t => setCode(t.replace(/\D/g,"").slice(0,6))}
+                  placeholder="______"
+                  placeholderTextColor={C.muted2}
+                  keyboardType="number-pad" maxLength={6} autoFocus
+                  style={[styles.input, { fontSize:24, letterSpacing:8, textAlign:"center" }]}/>
+
+                <Pressable onPress={handleVerifyCode}
+                  disabled={loading || code.trim().length !== 6}
+                  style={({pressed}) => ({
+                    backgroundColor: (loading || code.trim().length !== 6) ? C.muted2 : C.teal600,
+                    paddingVertical:13, borderRadius:20, alignItems:"center",
+                    opacity: pressed ? 0.85 : 1,
+                  })}>
+                  {loading
+                    ? <ActivityIndicator color="white"/>
+                    : <Text style={{ color:"white", fontSize:14, fontWeight:"500" }}>Verificar</Text>
+                  }
+                </Pressable>
+
+                <Pressable onPress={handleResendCode} disabled={resendIn > 0} style={{ alignItems:"center", paddingVertical:6 }}>
+                  <Text style={{ fontSize:13, color: resendIn > 0 ? C.muted2 : C.teal600, fontWeight:"600" }}>
+                    {resendIn > 0 ? `Reenviar código (${resendIn}s)` : "Reenviar código"}
+                  </Text>
+                </Pressable>
+
+                <Pressable onPress={backFromCode} style={{ alignItems:"center" }}>
+                  <Text style={{ fontSize:12, color:C.muted2 }}>← Usar otro correo</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {!awaitingCode && !forgotMode && (
             <View style={{ gap:12 }}>
 
               {/* Email */}
@@ -180,6 +364,14 @@ export default function Login() {
                   </Text>
                 )}
               </View>
+
+              {/* Olvidé mi contraseña — solo login */}
+              {mode==="login" && (
+                <Pressable onPress={() => { setForgotEmail(email); setForgotMode(true); setError(null); setSuccess(null); }}
+                  style={{ alignSelf:"flex-end", marginTop:4 }}>
+                  <Text style={{ fontSize:12, color:C.teal600, fontWeight:"600" }}>Olvidé mi contraseña</Text>
+                </Pressable>
+              )}
 
               {/* Repetir contraseña — solo registro */}
               {mode==="register" && (
@@ -266,7 +458,96 @@ export default function Login() {
                 }
               </Pressable>
             </View>
+            )}
 
+            {/* ── Flujo "Olvidé mi contraseña" ── */}
+            {forgotMode && (
+              <View style={{ gap:14 }}>
+
+                {forgotStep === "email" && (
+                  <>
+                    <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.ink }}>Recuperar contraseña</Text>
+                    <Text style={{ fontSize:13, color:C.muted, lineHeight:19 }}>
+                      Escribe tu email y te enviaremos un código para crear una nueva contraseña.
+                    </Text>
+                    <View>
+                      <Text style={styles.label}>Email</Text>
+                      <TextInput value={forgotEmail} onChangeText={setForgotEmail}
+                        placeholder="tu@email.com" placeholderTextColor={C.muted2}
+                        keyboardType="email-address" autoCapitalize="none" autoCorrect={false}
+                        style={styles.input}/>
+                    </View>
+                    <Pressable onPress={handleForgotSendOtp} disabled={loading}
+                      style={({pressed}) => ({ backgroundColor: loading ? C.muted2 : C.teal600, paddingVertical:13, borderRadius:20, alignItems:"center", opacity: pressed ? 0.85 : 1 })}>
+                      {loading ? <ActivityIndicator color="white"/> : <Text style={{ color:"white", fontSize:14, fontWeight:"500" }}>Enviar código</Text>}
+                    </Pressable>
+                    <Pressable onPress={resetForgotFlow} style={{ alignItems:"center" }}>
+                      <Text style={{ fontSize:12, color:C.muted2 }}>← Volver al inicio de sesión</Text>
+                    </Pressable>
+                  </>
+                )}
+
+                {forgotStep === "verify" && (
+                  <>
+                    <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.ink }}>Verifica tu correo</Text>
+                    <Text style={{ fontSize:13, color:C.muted, lineHeight:19 }}>
+                      Escribe el código de 6 dígitos que hemos enviado a{" "}
+                      <Text style={{ fontWeight:"700", color:C.ink }}>{forgotEmail.trim()}</Text>.
+                    </Text>
+                    <TextInput value={code} onChangeText={t => setCode(t.replace(/\D/g,"").slice(0,6))}
+                      placeholder="______" placeholderTextColor={C.muted2}
+                      keyboardType="number-pad" maxLength={6} autoFocus
+                      style={[styles.input, { fontSize:24, letterSpacing:8, textAlign:"center" }]}/>
+                    <Pressable onPress={handleForgotVerifyOtp} disabled={loading || code.trim().length !== 6}
+                      style={({pressed}) => ({ backgroundColor: (loading || code.trim().length !== 6) ? C.muted2 : C.teal600, paddingVertical:13, borderRadius:20, alignItems:"center", opacity: pressed ? 0.85 : 1 })}>
+                      {loading ? <ActivityIndicator color="white"/> : <Text style={{ color:"white", fontSize:14, fontWeight:"500" }}>Verificar</Text>}
+                    </Pressable>
+                    <Pressable onPress={handleForgotResendOtp} disabled={resendIn > 0} style={{ alignItems:"center", paddingVertical:6 }}>
+                      <Text style={{ fontSize:13, color: resendIn > 0 ? C.muted2 : C.teal600, fontWeight:"600" }}>
+                        {resendIn > 0 ? `Reenviar código (${resendIn}s)` : "Reenviar código"}
+                      </Text>
+                    </Pressable>
+                    <Pressable onPress={resetForgotFlow} style={{ alignItems:"center" }}>
+                      <Text style={{ fontSize:12, color:C.muted2 }}>← Volver al inicio de sesión</Text>
+                    </Pressable>
+                  </>
+                )}
+
+                {forgotStep === "newPassword" && (
+                  <>
+                    <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.ink }}>Nueva contraseña</Text>
+                    <View>
+                      <Text style={styles.label}>Nueva contraseña</Text>
+                      <TextInput value={newPassword} onChangeText={setNewPassword}
+                        placeholder="Mínimo 8 caracteres" placeholderTextColor={C.muted2}
+                        secureTextEntry style={styles.input}/>
+                      {newPassword.length > 0 && (
+                        <Text style={{ fontSize:11, marginTop:6, color: validatePassword(newPassword).valid ? C.success : C.danger }}>
+                          {validatePassword(newPassword).valid ? "✓ Contraseña válida" : `✗ ${validatePassword(newPassword).msg}`}
+                        </Text>
+                      )}
+                    </View>
+                    <View>
+                      <Text style={styles.label}>Confirmar contraseña</Text>
+                      <TextInput value={confirmNew} onChangeText={setConfirmNew}
+                        placeholder="Repite la contraseña" placeholderTextColor={C.muted2}
+                        secureTextEntry style={styles.input}/>
+                      {confirmNew.length > 0 && (
+                        <Text style={{ fontSize:11, marginTop:6, color: newPassword === confirmNew ? C.success : C.danger }}>
+                          {newPassword === confirmNew ? "✓ Las contraseñas coinciden" : "✗ Las contraseñas no coinciden"}
+                        </Text>
+                      )}
+                    </View>
+                    <Pressable onPress={handleSetNewPassword} disabled={loading}
+                      style={({pressed}) => ({ backgroundColor: loading ? C.muted2 : C.teal600, paddingVertical:13, borderRadius:20, alignItems:"center", opacity: pressed ? 0.85 : 1 })}>
+                      {loading ? <ActivityIndicator color="white"/> : <Text style={{ color:"white", fontSize:14, fontWeight:"500" }}>Guardar nueva contraseña</Text>}
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            )}
+
+            {!awaitingCode && !forgotMode && (
             <Text style={{ textAlign:"center", marginTop:24, fontSize:12, color:C.muted2, lineHeight:18 }}>
               Al registrarte aceptas los{" "}
               <Text style={{ color:C.teal600, fontWeight:"600", textDecorationLine:"underline" }}
@@ -280,6 +561,7 @@ export default function Login() {
               </Text>
               {" "}de SmartPills.
             </Text>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

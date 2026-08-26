@@ -93,7 +93,12 @@ export default function FriendsSearch() {
     if(error) {
       setStatusMap(m => ({ ...m, [targetId]: undefined }));
       Alert.alert("No se pudo enviar la solicitud", error.message);
+      return;
     }
+    // Notificar al destinatario por push
+    supabase.functions.invoke("notify-friend-request", {
+      body: { requester_profile_id: profileId, addressee_profile_id: targetId },
+    }).catch(() => {});
   }
 
   return (

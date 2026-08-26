@@ -1,11 +1,9 @@
-import { useEffect, useState, useRef } from "react";
-import { View, Text, FlatList, Pressable, Image, ActivityIndicator, Share, Linking, useWindowDimensions } from "react-native";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { View, Text, FlatList, ActivityIndicator, useWindowDimensions } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../../lib/supabase";
-import { pickPillImage } from "../../lib/pill-images";
+import ReelCard from "../../components/ReelCard";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0",
@@ -13,134 +11,6 @@ const C = {
   ink:"#1c2b26", muted:"#607068", muted2:"#96a89f",
   white:"#ffffff",
 };
-
-
-function timeAgo(dateString) {
-  if(!dateString) return "";
-  const diff  = Date.now() - new Date(dateString).getTime();
-  const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(hours / 24);
-  if(days  > 0) return `Hace ${days}d`;
-  if(hours > 0) return `Hace ${hours}h`;
-  return "Ahora";
-}
-
-async function handleShare(article) {
-  try {
-    // URL que abre SmartPills directamente en este pill. Si la app no está
-    // instalada, la página redirectora muestra la opción de descargarla.
-    const pillUrl = `https://smartpills-legal.vercel.app/pill?id=${encodeURIComponent(article.id)}`;
-    const message = `💊 ${article.title}\n\n${(article.ai_summary || "").slice(0, 140)}${(article.ai_summary || "").length > 140 ? "..." : ""}\n\n📖 Léelo en SmartPills:\n${pillUrl}`;
-    await Share.share({
-      message,
-      title: article.title,
-      url:   pillUrl,
-    });
-  } catch(err) {
-    console.error("Error compartiendo:", err);
-  }
-}
-
-function ActionButton({ icon, active, activeColor, onPress }) {
-  return (
-    <Pressable onPress={onPress} hitSlop={8} style={{ alignItems:"center" }}>
-      <View style={{
-        width:46, height:46, borderRadius:23,
-        backgroundColor: active ? activeColor : "rgba(15,61,53,0.55)",
-        alignItems:"center", justifyContent:"center",
-        transform:[{ scale: active ? 1.08 : 1 }],
-      }}>
-        <Ionicons name={icon} size={20} color="white"/>
-      </View>
-    </Pressable>
-  );
-}
-
-function ReelCard({ article, cardHeight, saved, onSave, reaction, onReact, topInset }) {
-  const imgUrl    = pickPillImage(article);
-  const halfHeight = cardHeight * 0.42;
-  const likeColor = "#1d9e87";
-  const saveColor = "#1d9e87";
-  const lastTapRef = useRef(0);
-
-  function handleDoubleTap() {
-    const now = Date.now();
-    if(now - lastTapRef.current < 300) {
-      if(reaction !== "like") onReact(article, "like");
-      lastTapRef.current = 0;
-    } else {
-      lastTapRef.current = now;
-    }
-  }
-
-  return (
-    <Pressable onPress={handleDoubleTap} style={{ width:"100%", height:cardHeight, backgroundColor:C.cream }}>
-
-      {/* Mitad superior — imagen */}
-      <View style={{ height:halfHeight, position:"relative" }}>
-        <Image source={{ uri:imgUrl }} style={{ width:"100%", height:"100%" }} resizeMode="cover"/>
-
-        <LinearGradient
-          colors={[
-            "rgba(247,245,240,0)",
-            "rgba(247,245,240,0.15)",
-            "rgba(247,245,240,0.4)",
-            "rgba(247,245,240,0.75)",
-            "rgba(247,245,240,1)",
-          ]}
-          locations={[0, 0.35, 0.6, 0.85, 1]}
-          style={{ position:"absolute", bottom:0, left:0, right:0, height:"35%" }}/>
-
-        {/* Cabecera flotante */}
-        <View style={{ position:"absolute", top: topInset + 14, left:16, right:16, flexDirection:"row", justifyContent:"space-between", alignItems:"center" }}>
-          <Text style={{ fontFamily:"Georgia", fontSize:17, color:"white", textShadowColor:"rgba(0,0,0,0.5)", textShadowRadius:4 }}>
-            Smart<Text style={{ color:C.teal300 }}>Pills</Text>
-          </Text>
-          <View style={{ backgroundColor:"rgba(0,0,0,0.4)", paddingHorizontal:10, paddingVertical:3, borderRadius:10 }}>
-            <Text style={{ fontSize:10, color:"rgba(255,255,255,0.9)" }}>{timeAgo(article.published_at)}</Text>
-          </View>
-        </View>
-
-      </View>
-
-      {/* Botones laterales — anclados justo debajo de la cabecera */}
-      <View style={{ position:"absolute", right:12, top: topInset + 50, gap:10, alignItems:"center", zIndex:10 }}>
-        <ActionButton icon={reaction==="like"?"heart":"heart-outline"}
-          active={reaction==="like"} activeColor={likeColor}
-          onPress={() => onReact(article, "like")}/>
-        <ActionButton icon={reaction==="dislike"?"thumbs-down":"thumbs-down-outline"}
-          active={reaction==="dislike"} activeColor="#d4522a"
-          onPress={() => onReact(article, "dislike")}/>
-        <ActionButton icon={saved?"bookmark":"bookmark-outline"}
-          active={saved} activeColor={saveColor}
-          onPress={() => onSave(article)}/>
-        <ActionButton icon="open-outline"
-          active={false} activeColor="white"
-          onPress={() => article.source_url && Linking.openURL(article.source_url)}/>
-        <ActionButton icon="share-social-outline"
-          active={false} activeColor="white"
-          onPress={() => handleShare(article)}/>
-      </View>
-
-      {/* Mitad inferior — texto */}
-      <View style={{ flex:1, paddingHorizontal:18, paddingTop:30, paddingBottom:16 }}>
-        <Text style={{ fontSize:12, fontWeight:"600", color:"#e8967e", textTransform:"uppercase", letterSpacing:0.5, marginBottom:8 }}>
-          {article.source_name || article.journal}
-        </Text>
-
-        <Text numberOfLines={4} style={{ fontFamily:"Georgia", fontSize:19, lineHeight:25, fontWeight:"bold", color:C.ink, marginBottom:10 }}>
-          {article.title}
-        </Text>
-
-        {article.ai_summary && (
-          <Text style={{ fontSize:16, lineHeight:26, color:"#4a5d55" }}>
-            {article.ai_summary}
-          </Text>
-        )}
-      </View>
-    </Pressable>
-  );
-}
 
 export default function Feed() {
   const [articles, setArticles]   = useState([]);
@@ -153,6 +23,17 @@ export default function Feed() {
 
   const TAB_BAR_HEIGHT = 74;
   const cardHeight = windowHeight - TAB_BAR_HEIGHT;
+
+  // Visualizaciones: cada vez que un pill aparece en pantalla (≥50% visible)
+  // sumamos +1 al contador. NO deduplicamos por usuario; si el mismo usuario
+  // vuelve a verlo, se cuenta otra vez (es lo que pidió el usuario).
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50, minimumViewTime: 0 });
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    viewableItems.forEach(v => {
+      const id = v?.item?.id;
+      if (id) supabase.rpc("increment_article_views", { p_article_id: id }).then(() => {}, () => {});
+    });
+  });
 
   useEffect(() => { loadAll(); }, []);
 
@@ -343,6 +224,8 @@ export default function Feed() {
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         getItemLayout={(_, index) => ({ length: cardHeight, offset: cardHeight * index, index })}
+        viewabilityConfig={viewabilityConfig.current}
+        onViewableItemsChanged={onViewableItemsChanged.current}
       />
     </View>
   );

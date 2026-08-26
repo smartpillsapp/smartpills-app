@@ -86,11 +86,10 @@ export default function Ahorcado() {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
       if(!user) return;
+      // add_xp_typed ya suma a total_xp Y a weekly_xp; NO añadir add_weekly_xp
+      // o el ranking semanal saldría el doble.
       await supabase.rpc("add_xp_typed", {
         user_id: user.id, xp_delta: XP, test_type: "game",
-      });
-      await supabase.rpc("add_weekly_xp", {
-        target_uid: user.id, delta: XP,
       });
     } catch(err) {
       console.warn("Ahorcado XP error:", err);

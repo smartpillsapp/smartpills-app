@@ -194,6 +194,10 @@ export default function AdminPills() {
                         <Ionicons name="thumbs-down" size={11} color={C.coral500}/>
                         <Text style={{ fontSize:11, color:C.coral500, fontWeight:"700" }}>{item._dislikes}</Text>
                       </View>
+                      <View style={{ flexDirection:"row", alignItems:"center", gap:3, backgroundColor:"#eef2ee", paddingHorizontal:6, paddingVertical:2, borderRadius:5 }}>
+                        <Ionicons name="eye" size={11} color={C.muted}/>
+                        <Text style={{ fontSize:11, color:C.muted, fontWeight:"700" }}>{item.views_count ?? 0}</Text>
+                      </View>
                     </View>
                   </View>
 

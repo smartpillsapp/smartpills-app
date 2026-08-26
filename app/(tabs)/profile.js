@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, ScrollView, Image, Modal, Alert, Linking } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, ScrollView, Image, Modal, Alert, Linking, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import UserAvatar from "../../components/UserAvatar";
 
 const C = {
-  teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal50:"#edf8f6",
+  teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
   coral500:"#d4522a", coral100:"#fae8e2", coral50:"#fdf4f1",
   amber500:"#d97706",
   cream:"#f7f5f0", white:"#ffffff", ink:"#1c2b26", muted:"#607068", muted2:"#96a89f",
@@ -42,6 +43,17 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Editar perfil
+  const [showEditModal, setShowEditModal]   = useState(false);
+  const [editName, setEditName]             = useState("");
+  const [editProfession, setEditProfession] = useState("");
+  const [editSpecialty, setEditSpecialty]   = useState("");
+  const [editWorkplace, setEditWorkplace]   = useState("");
+  const [editCity, setEditCity]             = useState("");
+  const [editAvatarId, setEditAvatarId]     = useState(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [saving, setSaving]                 = useState(false);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -95,6 +107,46 @@ export default function Profile() {
     }
   }
 
+  async function toggleStreakNotifications() {
+    if(!profile?.id) return;
+    const newValue = !(profile.streak_notifications_enabled !== false);
+    setProfile(p => ({ ...p, streak_notifications_enabled: newValue }));
+    const { error } = await supabase.from("profiles")
+      .update({ streak_notifications_enabled: newValue })
+      .eq("id", profile.id);
+    if(error) {
+      setProfile(p => ({ ...p, streak_notifications_enabled: !newValue }));
+      Alert.alert("Error", "No se pudo guardar el cambio. Inténtalo de nuevo.");
+    }
+  }
+
+  function openEditModal() {
+    setEditName(profile?.full_name || "");
+    setEditProfession(profile?.profession || "");
+    setEditSpecialty(profile?.specialty || "");
+    setEditWorkplace(profile?.workplace || "");
+    setEditCity(profile?.city || "");
+    setEditAvatarId(profile?.avatar_id || null);
+    setShowEditModal(true);
+  }
+
+  async function handleSaveProfile() {
+    if(!profile?.id) return;
+    setSaving(true);
+    const { error } = await supabase.from("profiles").update({
+      full_name:  editName.trim() || null,
+      profession: editProfession.trim() || null,
+      specialty:  editSpecialty.trim() || null,
+      workplace:  editWorkplace.trim() || null,
+      city:       editCity.trim() || null,
+      avatar_id:  editAvatarId || null,
+    }).eq("id", profile.id);
+    setSaving(false);
+    if(error) { Alert.alert("Error", "No se pudo guardar. Inténtalo de nuevo."); return; }
+    setProfile(p => ({ ...p, full_name: editName.trim(), profession: editProfession.trim(), specialty: editSpecialty.trim(), workplace: editWorkplace.trim(), city: editCity.trim(), avatar_id: editAvatarId || null }));
+    setShowEditModal(false);
+  }
+
   async function handleDeleteAccount() {
     if(!profile?.id) return;
     setDeleting(true);
@@ -139,9 +191,14 @@ export default function Profile() {
           <Text style={{ fontFamily:"Georgia", fontSize:18, color:"white", alignSelf:"flex-start", marginBottom:20 }}>
             Smart<Text style={{ color:C.teal300 }}>Pills</Text>
           </Text>
-          <View style={{ width:72, height:72, borderRadius:36, backgroundColor:"rgba(255,255,255,0.15)", borderWidth:2, borderColor:"rgba(255,255,255,0.3)", alignItems:"center", justifyContent:"center", marginBottom:12 }}>
-            <Text style={{ fontFamily:"Georgia", fontSize:28, color:"white" }}>{initials}</Text>
-          </View>
+          <UserAvatar
+            avatarId={profile?.avatar_id}
+            initials={initials}
+            size={94}
+            color="rgba(255,255,255,0.15)"
+            containerStyle={{ marginBottom:12, borderWidth:2, borderColor:"rgba(255,255,255,0.3)" }}
+            initialsStyle={{ fontFamily:"Georgia", fontSize:34, color:"white" }}
+          />
           <Text style={{ fontFamily:"Georgia", fontSize:20, color:"white", marginBottom:4 }}>
             {profile?.full_name || profile?.username || "Mi perfil"}
           </Text>
@@ -208,9 +265,15 @@ export default function Profile() {
             </Pressable>
           )}
 
-          <Text style={{ fontSize:11, fontWeight:"500", letterSpacing:1.2, textTransform:"uppercase", color:C.muted2, marginBottom:8 }}>
-            Tu perfil
-          </Text>
+          <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+            <Text style={{ fontSize:11, fontWeight:"500", letterSpacing:1.2, textTransform:"uppercase", color:C.muted2 }}>
+              Tu perfil
+            </Text>
+            <Pressable onPress={openEditModal}
+              style={({pressed}) => ({ backgroundColor:C.teal50, borderWidth:1, borderColor:C.teal100, borderRadius:20, paddingHorizontal:14, paddingVertical:6, opacity:pressed?0.85:1 })}>
+              <Text style={{ fontSize:11, fontWeight:"600", color:C.teal600 }}>Editar perfil</Text>
+            </Pressable>
+          </View>
           <View style={{ backgroundColor:C.white, borderWidth:1, borderColor:C.border, borderRadius:12, padding:16, marginBottom:20 }}>
             <StatRow label="Nombre"      value={profile?.full_name}/>
             <StatRow label="Usuario"     value={profile?.username}/>
@@ -277,6 +340,33 @@ export default function Profile() {
                 }}/>
               </Pressable>
             </View>
+
+            <View style={{ height:1, backgroundColor:C.border, marginVertical:14 }}/>
+
+            <View style={{ flexDirection:"row", alignItems:"center", gap:12 }}>
+              <View style={{ width:40, height:40, borderRadius:20, backgroundColor:C.teal50, alignItems:"center", justifyContent:"center" }}>
+                <Ionicons name="notifications-outline" size={20} color={C.teal600}/>
+              </View>
+              <View style={{ flex:1 }}>
+                <Text style={{ fontSize:14, fontWeight:"600", color:C.ink, marginBottom:2 }}>
+                  Recordarme mi racha a las 20:30
+                </Text>
+                <Text style={{ fontSize:11, color:C.muted2, lineHeight:15 }}>
+                  Te enviaremos una notificación cuando no hayas hecho aún el test del día.
+                </Text>
+              </View>
+              <Pressable onPress={toggleStreakNotifications}
+                style={{
+                  width:48, height:28, borderRadius:14, padding:2,
+                  backgroundColor: profile?.streak_notifications_enabled !== false ? C.teal600 : "#cfd6d2",
+                  justifyContent:"center",
+                }}>
+                <View style={{
+                  width:24, height:24, borderRadius:12, backgroundColor:"white",
+                  alignSelf: profile?.streak_notifications_enabled !== false ? "flex-end" : "flex-start",
+                }}/>
+              </Pressable>
+            </View>
           </View>
 
           <Text style={{ fontSize:11, fontWeight:"500", letterSpacing:1.2, textTransform:"uppercase", color:C.muted2, marginBottom:8 }}>
@@ -326,6 +416,100 @@ export default function Profile() {
         </View>
       </ScrollView>
 
+      {/* Modal editar perfil */}
+      <Modal visible={showEditModal} transparent animationType="slide" onRequestClose={() => !saving && setShowEditModal(false)}>
+        <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.45)", justifyContent:"flex-end" }}>
+          <View style={{ backgroundColor:C.cream, borderTopLeftRadius:20, borderTopRightRadius:20, padding:24, paddingBottom:40 }}>
+            <View style={{ flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.ink }}>Editar perfil</Text>
+              <Pressable onPress={() => setShowEditModal(false)}>
+                <Text style={{ fontSize:13, color:C.muted2 }}>Cancelar</Text>
+              </Pressable>
+            </View>
+            {/* Selector de foto de perfil */}
+            <Pressable onPress={() => setShowAvatarPicker(true)}
+              style={{ alignItems:"center", marginBottom:20 }}>
+              <UserAvatar
+                avatarId={editAvatarId}
+                initials={initials}
+                size={94}
+                color="rgba(28,43,38,0.08)"
+                containerStyle={{ borderWidth:2, borderColor: editAvatarId ? C.teal600 : C.border }}
+                initialsStyle={{ fontFamily:"Georgia", fontSize:34, color:C.teal600 }}
+              />
+              <View style={{ marginTop:10, backgroundColor:C.teal50, borderWidth:1, borderColor:C.teal100, borderRadius:20, paddingHorizontal:18, paddingVertical:7 }}>
+                <Text style={{ fontSize:12, color:C.teal600, fontWeight:"600" }}>
+                  {editAvatarId ? "Cambiar foto" : "Elegir foto de perfil"}
+                </Text>
+              </View>
+            </Pressable>
+
+            {[
+              { label:"Nombre", value:editName, setter:setEditName, placeholder:"Tu nombre completo" },
+              { label:"Profesión", value:editProfession, setter:setEditProfession, placeholder:"Ej. enfermería" },
+              { label:"Especialidad", value:editSpecialty, setter:setEditSpecialty, placeholder:"Ej. pediatría" },
+              { label:"Centro", value:editWorkplace, setter:setEditWorkplace, placeholder:"Hospital o centro de salud" },
+              { label:"Provincia", value:editCity, setter:setEditCity, placeholder:"Ej. Asturias" },
+            ].map(field => (
+              <View key={field.label} style={{ marginBottom:14 }}>
+                <Text style={{ fontSize:11, fontWeight:"500", color:C.muted, marginBottom:5 }}>{field.label.toUpperCase()}</Text>
+                <TextInput
+                  value={field.value}
+                  onChangeText={field.setter}
+                  placeholder={field.placeholder}
+                  placeholderTextColor={C.muted2}
+                  style={{ backgroundColor:C.white, borderWidth:1, borderColor:"rgba(28,43,38,0.16)", borderRadius:8, paddingHorizontal:14, paddingVertical:10, fontSize:14, color:C.ink }}
+                />
+              </View>
+            ))}
+            <Pressable onPress={handleSaveProfile} disabled={saving}
+              style={({pressed}) => ({ marginTop:8, backgroundColor: saving ? C.muted2 : C.teal600, paddingVertical:13, borderRadius:20, alignItems:"center", opacity: pressed ? 0.85 : 1 })}>
+              {saving ? <ActivityIndicator color="white"/> : <Text style={{ color:"white", fontSize:14, fontWeight:"500" }}>Guardar cambios</Text>}
+            </Pressable>
+          </View>
+
+          {/* Selector de avatar — dentro del modal de edición para que aparezca encima en iOS */}
+          {showAvatarPicker && (
+            <View style={{ position:"absolute", top:0, left:0, right:0, bottom:0, backgroundColor:"rgba(0,0,0,0.6)", justifyContent:"center", alignItems:"center", padding:24 }}>
+              <View style={{ backgroundColor:C.cream, borderRadius:20, padding:20, width:"100%" }}>
+                <Text style={{ fontFamily:"Georgia", fontSize:18, color:C.ink, marginBottom:4, textAlign:"center" }}>
+                  Tu foto de perfil
+                </Text>
+                <Text style={{ fontSize:12, color:C.muted2, marginBottom:20, textAlign:"center" }}>
+                  Elige uno de los avatares disponibles
+                </Text>
+                <View style={{ flexDirection:"row", flexWrap:"wrap", gap:12, justifyContent:"center" }}>
+                  {Array.from({length:12}, (_,i) => i+1).map(n => (
+                    <Pressable key={n} onPress={() => { setEditAvatarId(n); setShowAvatarPicker(false); }}
+                      style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
+                      <UserAvatar
+                        avatarId={n}
+                        initials={String(n)}
+                        size={64}
+                        containerStyle={{
+                          borderWidth: editAvatarId === n ? 3 : 1.5,
+                          borderColor: editAvatarId === n ? C.teal600 : C.border,
+                        }}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+                {editAvatarId ? (
+                  <Pressable onPress={() => { setEditAvatarId(null); setShowAvatarPicker(false); }}
+                    style={{ marginTop:18, alignItems:"center", paddingVertical:8 }}>
+                    <Text style={{ fontSize:13, color:C.muted2 }}>Quitar foto de perfil</Text>
+                  </Pressable>
+                ) : null}
+                <Pressable onPress={() => setShowAvatarPicker(false)}
+                  style={{ marginTop:8, alignItems:"center", paddingVertical:8 }}>
+                  <Text style={{ fontSize:13, color:C.muted, fontWeight:"500" }}>Cancelar</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </View>
+      </Modal>
+
       {/* Modal de doble confirmación */}
       <Modal visible={showDeleteModal} transparent animationType="fade"
         onRequestClose={() => !deleting && setShowDeleteModal(false)}>
@@ -369,6 +553,7 @@ export default function Profile() {
           </View>
         </View>
       </Modal>
+
     </SafeAreaView>
   );
 }

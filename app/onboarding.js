@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { supabase } from "../lib/supabase";
 import { useApp } from "../lib/app-context";
+import UserAvatar from "../components/UserAvatar";
 
 const C = {
-  teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal50:"#edf8f6",
+  teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
   coral500:"#d4522a", coral100:"#fae8e2", coral50:"#fdf4f1",
   cream:"#f7f5f0", white:"#ffffff", ink:"#1c2b26", muted:"#607068", muted2:"#96a89f",
   border:"rgba(28,43,38,0.09)", borderMd:"rgba(28,43,38,0.16)",
@@ -22,7 +23,7 @@ const PROFESSIONS = [
 export default function Onboarding() {
   const { reloadProfile }     = useApp();
   const [step, setStep]       = useState(0);
-  const [answers, setAnswers] = useState({ profession:"", specialty:"", workplace:"" });
+  const [answers, setAnswers] = useState({ profession:"", specialty:"", workplace:"", avatar_id: null });
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState(null);
 
@@ -47,11 +48,18 @@ export default function Onboarding() {
       isText: true,
       placeholder: "Hospital, clínica, centro de salud...",
     },
+    {
+      key: "avatar_id",
+      title: "¿Cómo quieres que te vean?",
+      subtitle: "Elige tu foto de perfil — puedes cambiarla cuando quieras",
+      isAvatar: true,
+    },
   ];
 
   const current = STEPS[step];
   const isLast  = step === STEPS.length - 1;
-  const canNext = current.isText ? true : !!answers[current.key];
+  // La profesión es obligatoria; los demás pasos siempre se pueden continuar
+  const canNext = current.isText || current.isAvatar ? true : !!answers[current.key];
 
   async function handleFinish() {
     setSaving(true); setError(null);
@@ -63,12 +71,12 @@ export default function Onboarding() {
         profession:           answers.profession,
         specialty:            answers.specialty,
         workplace:            answers.workplace,
+        avatar_id:            answers.avatar_id || null,
         onboarding_completed: true,
         updated_at:           new Date().toISOString(),
       }).eq("auth_user_id", user.id);
 
       if(error) throw error;
-      // Refrescar perfil en el layout raíz para que detecte que onboarding está completo
       await reloadProfile();
     } catch(err) {
       setError(err.message || "Error al guardar. Inténtalo de nuevo.");
@@ -118,7 +126,56 @@ export default function Onboarding() {
             {current.subtitle}
           </Text>
 
-          {current.isText ? (
+          {current.isAvatar ? (
+            /* ── Paso de avatar ── */
+            <View>
+              {/* Preview del avatar seleccionado */}
+              <View style={{ alignItems:"center", marginBottom:28 }}>
+                <UserAvatar
+                  avatarId={answers.avatar_id}
+                  initials="?"
+                  size={94}
+                  color="rgba(28,43,38,0.08)"
+                  containerStyle={{ borderWidth:2, borderColor: answers.avatar_id ? C.teal600 : C.border }}
+                  initialsStyle={{ fontFamily:"Georgia", fontSize:34, color:C.muted2 }}
+                />
+                {answers.avatar_id ? (
+                  <Pressable onPress={() => setAnswers(a => ({...a, avatar_id: null}))}
+                    style={{ marginTop:10 }}>
+                    <Text style={{ fontSize:12, color:C.muted2 }}>Quitar selección</Text>
+                  </Pressable>
+                ) : (
+                  <Text style={{ fontSize:12, color:C.muted2, marginTop:10 }}>
+                    Toca uno de los avatares de abajo
+                  </Text>
+                )}
+              </View>
+
+              {/* Grid 4×3 */}
+              <View style={{ flexDirection:"row", flexWrap:"wrap", gap:14, justifyContent:"center" }}>
+                {Array.from({length:12}, (_,i) => i+1).map(n => (
+                  <Pressable key={n} onPress={() => setAnswers(a => ({...a, avatar_id: n}))}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
+                    <UserAvatar
+                      avatarId={n}
+                      initials={String(n)}
+                      size={64}
+                      containerStyle={{
+                        borderWidth: answers.avatar_id === n ? 3 : 1.5,
+                        borderColor: answers.avatar_id === n ? C.teal600 : C.border,
+                      }}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={{ fontSize:12, color:C.muted2, textAlign:"center", marginTop:20 }}>
+                Puedes cambiarlo en cualquier momento desde tu perfil.
+              </Text>
+            </View>
+
+          ) : current.isText ? (
+            /* ── Paso de texto ── */
             <View>
               <TextInput value={answers[current.key]}
                 onChangeText={v => setAnswers(a => ({...a, [current.key]: v}))}
@@ -129,7 +186,9 @@ export default function Onboarding() {
                 Puedes dejarlo en blanco y completarlo más tarde en tu perfil.
               </Text>
             </View>
+
           ) : (
+            /* ── Paso de profesión ── */
             <View style={{ flexDirection:"row", flexWrap:"wrap", gap:10 }}>
               {PROFESSIONS.map(opt => {
                 const selected = answers[current.key] === opt.value;
@@ -178,7 +237,13 @@ export default function Onboarding() {
             style={({pressed}) => ({ flex:2, paddingVertical:13, borderRadius:20, backgroundColor: canNext ? C.teal600 : C.muted2, alignItems:"center", opacity:pressed?0.85:1 })}>
             {saving
               ? <ActivityIndicator color="white"/>
-              : <Text style={{ fontSize:14, fontWeight:"500", color:"white" }}>{isLast ? "¡Empezar!" : "Siguiente →"}</Text>
+              : <Text style={{ fontSize:14, fontWeight:"500", color:"white" }}>
+                  {isLast
+                    ? "¡Empezar!"
+                    : current.isAvatar && !answers.avatar_id
+                      ? "Saltar →"
+                      : "Siguiente →"}
+                </Text>
             }
           </Pressable>
         </View>

@@ -11,6 +11,21 @@ const MESSAGES = [
   "¡Sigues en racha! Estás intratable. A este ritmo vas a tener que añadir tu racha de la app directamente al currículum.",
   "¡Racha renovada! Tu constancia es legendaria. Ni el mismísimo jefe de servicio se atrevería a interrumpirte ahora.",
   "Wow, tu racha está más limpia que la casaca de la supervisora.",
+  "Llevas una adherencia al tratamiento de test que ni el paciente más obediente de la planta. Sigue así antes de que te dé el alta.",
+  "Tu racha diaria está más estable que las constantes de un paciente sedado. A ver cuánto te dura el ritmo.",
+  "Cuidado con tanta constancia, que la adicción a los test no entra por la Seguridad Social.",
+  "Día tras día al pie del cañón... Se nota que te da más miedo fallar un test que una guardia de fin de semana.",
+  "Sinceramente, tu racha ya asusta. O no tienes vida social o te han programado con inteligencia artificial.",
+  "Si le pusieras la misma constancia a ir al gimnasio o a beber agua, serías inmortal.",
+  "Un día más y la app te va a nombrar empleado del mes. Descansa un poco, que nos haces quedar mal a los demás.",
+  "Entrar todos los días a hacer el test ya no es disciplina, es un trastorno obsesivo-compulsivo rozando lo patológico.",
+  "Mucho presumir de racha, pero recuerda: solo hace falta un día de despiste para volver a la casilla de salida.",
+  "La racha mola, sí, pero aquí lo que cuenta es no romper el 'streak'. No te me desinfles mañana.",
+  "Llevas un ritmo impecable... Sería una verdadera lástima que te olvidaras de entrar justo mañana, ¿verdad?",
+  "Vas volando, pero recuerda la regla de oro: cuanto más alta es la racha, más duele la caída cuando te despistes un solo día.",
+  "Impresionante. Ahora la verdadera presión no es aprobar, es no manchar ese historial impecable.",
+  "Llevas tantos días seguidos que si mañana fallas o se te olvida, voy a asumir que te ha secuestrado una secta.",
+  "Estás a un despiste de romper el récord. No te presiono, pero hoy todo el grupo tiene los ojos puestos en ti.",
 ];
 
 const C = {

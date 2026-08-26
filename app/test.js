@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Platform } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,6 +47,7 @@ export default function TestScreen() {
   const { kind } = useLocalSearchParams();
   const testKind = kind === "general" ? "general" : "daily";
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [profile, setProfile]   = useState(null);
   const [challenge, setChallenge] = useState(null);
@@ -66,6 +67,9 @@ export default function TestScreen() {
   const [flashDismissed, setFlashDismissed] = useState(false);
   const [streakFlashDismissed, setStreakFlashDismissed] = useState(false);
   const scoreRef = useRef(0);
+  // Acumula { question_id, _kind, is_correct } por cada pregunta respondida,
+  // para luego registrarlas en user_quiz_answers y evitar que vuelvan a salir.
+  const answersRef = useRef([]);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -85,13 +89,14 @@ export default function TestScreen() {
       const today = new Date().toISOString().split("T")[0];
 
       if(testKind === "general") {
-        // Test General: ilimitado. Sacamos 5 preguntas aleatorias del pool.
+        // Test General: ilimitado. Sacamos 5 preguntas no vistas (si se agotan,
+        // la RPC nos devuelve las más antiguas que ya vimos hace tiempo).
         const { data:randomQuestions, error:rpcErr } = await supabase
-          .rpc("get_random_general_questions", { n: 5 });
+          .rpc("get_unseen_general_questions", { p_user_id: user.id, p_count: 5 });
         if(rpcErr || !randomQuestions || randomQuestions.length === 0) {
           setChallenge(null);
         } else {
-          setChallenge({ questions: randomQuestions });
+          setChallenge({ questions: randomQuestions.map(q => ({ ...q, _kind: "general" })) });
         }
       } else {
         // Reto Diario: bloqueado a una vez al día.
@@ -110,7 +115,8 @@ export default function TestScreen() {
           .eq("is_active", true)
           .single();
 
-        if(!challengeData) {
+        let baseChallenge = challengeData;
+        if(!baseChallenge) {
           const { data:generalChallenge } = await supabase
             .from("daily_challenges")
             .select("*")
@@ -118,9 +124,43 @@ export default function TestScreen() {
             .eq("date", today)
             .eq("is_active", true)
             .single();
-          setChallenge(generalChallenge);
+          baseChallenge = generalChallenge;
+        }
+
+        if(!baseChallenge) {
+          setChallenge(null);
         } else {
-          setChallenge(challengeData);
+          // Filtra las preguntas que el usuario ya ha visto y las sustituye por
+          // una de reemplazo no vista. Solo las preguntas que tienen id (las
+          // generadas con UUID) pueden filtrarse; las antiguas sin id pasan
+          // tal cual.
+          const questions = Array.isArray(baseChallenge.questions) ? baseChallenge.questions : [];
+          const idsToCheck = questions.map(q => q?.id).filter(Boolean);
+          let seenIds = new Set();
+          if(idsToCheck.length > 0) {
+            const { data:seen } = await supabase
+              .from("user_quiz_answers")
+              .select("question_id")
+              .eq("auth_user_id", user.id)
+              .in("question_id", idsToCheck);
+            seenIds = new Set((seen || []).map(r => r.question_id));
+          }
+
+          const finalQuestions = [];
+          for(const q of questions) {
+            if(q?.id && seenIds.has(q.id)) {
+              const { data:repl } = await supabase
+                .rpc("get_unseen_daily_replacement", { p_user_id: user.id, p_profession: prof });
+              const r = Array.isArray(repl) ? repl[0] : null;
+              if(r) {
+                finalQuestions.push({ ...r, _kind: "general" });
+                continue;
+              }
+            }
+            finalQuestions.push({ ...q, _kind: "daily" });
+          }
+
+          setChallenge({ ...baseChallenge, questions: finalQuestions });
         }
       }
     } catch(err) {
@@ -154,14 +194,41 @@ export default function TestScreen() {
         }).eq("auth_user_id", user.id);
       }
 
-      // XP en ambos casos
+      // XP en ambos casos. add_xp_typed ya suma a total_xp Y a weekly_xp,
+      // así que NO hay que llamar también a add_weekly_xp (duplicaría el XP
+      // semanal y hacía que en el ranking todo apareciese doble).
       if(totalScore > 0) {
         await supabase.rpc("add_xp_typed", {
           user_id: user.id, xp_delta: totalScore, test_type: "general",
         });
-        await supabase.rpc("add_weekly_xp", {
-          target_uid: user.id, delta: totalScore,
-        });
+
+        // Actualizar historial diario de XP (para el gráfico de perfil de amigos)
+        const { data: profXp } = await supabase
+          .from("profiles")
+          .select("daily_xp_history")
+          .eq("auth_user_id", user.id)
+          .single();
+        const history = { ...(profXp?.daily_xp_history || {}) };
+        history[today] = (history[today] || 0) + totalScore;
+        // Eliminar entradas con más de 7 días
+        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+        const cutoffStr = cutoff.toISOString().split("T")[0];
+        Object.keys(history).forEach(d => { if(d < cutoffStr) delete history[d]; });
+        await supabase.from("profiles")
+          .update({ daily_xp_history: history })
+          .eq("auth_user_id", user.id);
+      }
+
+      // Registro de preguntas vistas: clave para que no se repitan en futuros tests.
+      if(answersRef.current.length > 0) {
+        const rows = answersRef.current.map(a => ({
+          auth_user_id: user.id,
+          question_id:  a.question_id,
+          kind:         a._kind,
+          profession:   profile?.profession || null,
+          is_correct:   a.is_correct,
+        }));
+        await supabase.from("user_quiz_answers").insert(rows);
       }
     } catch(err) {
       console.error("Error guardando:", err);
@@ -182,6 +249,11 @@ export default function TestScreen() {
       return "disabled";
     });
     setOptionStates(newStates);
+    // Anotar la pregunta para registrarla luego en user_quiz_answers.
+    // Si no tiene id (preguntas antiguas sin UUID), no se puede registrar.
+    if(q?.id) {
+      answersRef.current.push({ question_id: q.id, _kind: q._kind || testKind, is_correct: isCorrect });
+    }
     if(isCorrect) {
       const xpPerCorrect = testKind === "general" ? 5 : 10;
       setScore(s => { const n = s + xpPerCorrect; scoreRef.current = n; return n; });
@@ -391,7 +463,7 @@ export default function TestScreen() {
 
       {/* Botón siguiente */}
       {answered && (
-        <View style={{ backgroundColor:C.white, borderTopWidth:1, borderTopColor:C.border, padding:14, alignItems:"flex-end" }}>
+        <View style={{ backgroundColor:C.white, borderTopWidth:1, borderTopColor:C.border, paddingHorizontal:14, paddingTop:14, paddingBottom: Platform.OS === "android" ? insets.bottom + 14 : 14, alignItems:"flex-end" }}>
           <Pressable onPress={handleNext}
             style={({pressed}) => ({ backgroundColor:C.teal600, paddingHorizontal:22, paddingVertical:11, borderRadius:18, opacity:pressed?0.85:1 })}>
             <Text style={{ color:"white", fontSize:13, fontWeight:"500" }}>

@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { AppContext } from "../lib/app-context";
 import SplashAnimation from "../components/SplashAnimation";
+import { registerForPushNotificationsAsync, attachNotificationTapListener } from "../lib/notifications";
 
 const C = {
   cream:   "#f7f5f0",
@@ -32,7 +33,13 @@ export default function RootLayout() {
       else { setProfile(null); setLoading(false); }
     });
 
-    return () => subscription.unsubscribe();
+    // Listener de tap en la notificación → navega a la ruta indicada (test diario).
+    const tapSub = attachNotificationTapListener(router);
+
+    return () => {
+      subscription.unsubscribe();
+      tapSub?.remove?.();
+    };
   }, []);
 
   async function loadProfile(userId) {
@@ -43,10 +50,19 @@ export default function RootLayout() {
       .single();
     setProfile(data);
     setLoading(false);
+    // Registro de push token (no bloquea; falla silenciosamente sin permisos).
+    if(userId) registerForPushNotificationsAsync(userId);
   }
 
   async function reloadProfile() {
-    if(session?.user?.id) await loadProfile(session.user.id);
+    // Pedimos la sesión actual a Supabase en vez de fiarnos del estado `session`
+    // (que puede ir un paso por detrás justo tras verificar el código). Así, al
+    // recién registrarse, el perfil se carga y la navegación a onboarding ocurre.
+    const { data: { session: current } } = await supabase.auth.getSession();
+    if(current?.user?.id) {
+      setSession(current);
+      await loadProfile(current.user.id);
+    }
   }
 
   // Redirección según estado: login → onboarding → home

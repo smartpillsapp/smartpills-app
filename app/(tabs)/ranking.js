@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, ActivityIndicator, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { supabase } from "../../lib/supabase";
+import UserAvatar from "../../components/UserAvatar";
 import { getTimeUntilReset, getLeagueImage, LEAGUES } from "../../lib/leagues";
 import LeagueChangeFlash from "../../components/LeagueChangeFlash";
 
@@ -49,6 +50,7 @@ function buildUserRow(profile, position, currentProfileId, xpField) {
     xp:         profile[xpField] || 0,
     avatar:     getInitials(profile.username, profile.full_name),
     color:      getColor(profile.username || profile.id),
+    avatar_id:  profile.avatar_id || null,
     isMe:       profile.id === currentProfileId,
   };
 }
@@ -67,7 +69,7 @@ function Medal({ pos }) {
   return <Text style={{ fontSize:13, fontWeight:"500", color:C.muted2, textAlign:"center", minWidth:24 }}>{pos}</Text>;
 }
 
-function RankRow({ user, highlight, zone }) {
+function RankRow({ user, highlight, zone, onPress }) {
   const subtitle = [user.profession, user.workplace, user.province].filter(Boolean).join(" · ");
   let bg          = C.white;
   let borderColor = C.border;
@@ -77,11 +79,13 @@ function RankRow({ user, highlight, zone }) {
   if(highlight) { borderColor = "#6dcfc0"; if(!zone) bg = C.teal50; }
 
   return (
-    <View style={{ backgroundColor:bg, borderWidth:1, borderColor:borderColor, borderRadius:10, padding:11, flexDirection:"row", alignItems:"center", gap:10, marginBottom:6 }}>
+    <Pressable onPress={onPress} style={({ pressed }) => ({
+      backgroundColor: pressed && onPress ? C.teal50 : bg,
+      borderWidth:1, borderColor:borderColor, borderRadius:10, padding:11,
+      flexDirection:"row", alignItems:"center", gap:10, marginBottom:6,
+    })}>
       <View style={{ minWidth:28, alignItems:"center" }}><Medal pos={user.pos}/></View>
-      <View style={{ width:32, height:32, borderRadius:16, backgroundColor:user.color, alignItems:"center", justifyContent:"center" }}>
-        <Text style={{ color:"white", fontSize:12, fontWeight:"500" }}>{user.avatar}</Text>
-      </View>
+      <UserAvatar avatarId={user.avatar_id} initials={user.avatar} size={32} color={user.color}/>
       <View style={{ flex:1, minWidth:0 }}>
         <View style={{ flexDirection:"row", alignItems:"center", gap:5 }}>
           <Text style={{ fontSize:13, fontWeight:"500", color:C.ink }}>{user.name}</Text>
@@ -102,7 +106,7 @@ function RankRow({ user, highlight, zone }) {
           {user.xp} <Text style={{ fontSize:10, color:C.muted2, fontWeight:"400" }}>XP</Text>
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -117,7 +121,7 @@ export default function Ranking() {
   const [leagueChange, setLeagueChange] = useState(null);
   const [authUserId, setAuthUserId]   = useState(null);
 
-  useEffect(() => { loadProfile(); }, []);
+  useFocusEffect(useCallback(() => { loadProfile(); }, []));
   useEffect(() => {
     if(profileId !== null) loadRanking();
   }, [mode, profileId, userLeague]);
@@ -134,7 +138,7 @@ export default function Ranking() {
       setAuthUserId(user.id);
       const { data:profile } = await supabase
         .from("profiles")
-        .select("id, current_league, previous_league")
+        .select("id, current_league, previous_league, gerentes_week_rank")
         .eq("auth_user_id", user.id)
         .single();
       if(profile) {
@@ -148,7 +152,13 @@ export default function Ranking() {
           const cur = profile.current_league;
           const prev = profile.previous_league;
           let direction;
-          if(prev === cur) {
+          let kingRank = null;
+
+          // Caso especial: top 3 de Gerentes que se quedan en la liga máxima
+          if(cur === "Gerentes" && prev === "Gerentes" && profile.gerentes_week_rank) {
+            direction = "king";
+            kingRank = profile.gerentes_week_rank;
+          } else if(prev === cur) {
             direction = "stay";
           } else {
             const oldIdx = LEAGUES.indexOf(prev);
@@ -156,7 +166,7 @@ export default function Ranking() {
             if(oldIdx < 0 || newIdx < 0) return;
             direction = newIdx > oldIdx ? "up" : "down";
           }
-          setLeagueChange({ direction, newLeague: cur });
+          setLeagueChange({ direction, newLeague: cur, kingRank });
         }
       }
     } catch(err) {
@@ -170,7 +180,7 @@ export default function Ranking() {
       try {
         await supabase
           .from("profiles")
-          .update({ previous_league: null })
+          .update({ previous_league: null, gerentes_week_rank: null })
           .eq("auth_user_id", authUserId);
       } catch(err) {
         console.warn("No se pudo limpiar previous_league:", err?.message);
@@ -183,7 +193,7 @@ export default function Ranking() {
     try {
       let query = supabase
         .from("profiles")
-        .select("id, username, full_name, profession, workplace, city, current_league, total_xp, weekly_xp")
+        .select("id, username, full_name, profession, workplace, city, current_league, total_xp, weekly_xp, avatar_id")
         .limit(100);
 
       if(mode === "league") {
@@ -237,6 +247,7 @@ export default function Ranking() {
         <LeagueChangeFlash
           direction={leagueChange.direction}
           newLeague={leagueChange.newLeague}
+          kingRank={leagueChange.kingRank}
           onDismiss={dismissLeagueChange}
         />
       )}
@@ -316,9 +327,7 @@ export default function Ranking() {
         <View style={{ paddingHorizontal:14, paddingTop:12 }}>
           <View style={{ backgroundColor:C.white, borderWidth:1, borderColor:C.borderMd, borderRadius:12, padding:13, flexDirection:"row", alignItems:"center", gap:12, marginBottom:6 }}>
             <Text style={{ fontFamily:"Georgia", fontStyle:"italic", fontSize:30, color:C.teal600, minWidth:42, textAlign:"center" }}>#{myRow.pos}</Text>
-            <View style={{ width:40, height:40, borderRadius:20, backgroundColor:myRow.color, alignItems:"center", justifyContent:"center" }}>
-              <Text style={{ color:"white", fontSize:14, fontWeight:"500" }}>{myRow.avatar}</Text>
-            </View>
+            <UserAvatar avatarId={myRow.avatar_id} initials={myRow.avatar} size={40} color={myRow.color}/>
             <View style={{ flex:1, minWidth:0 }}>
               <Text numberOfLines={1} style={{ fontSize:14, fontWeight:"500", color:C.ink }}>{myRow.name}</Text>
               <Text numberOfLines={1} style={{ fontSize:11, color:C.muted2 }}>
@@ -374,7 +383,8 @@ export default function Ranking() {
           contentContainerStyle={{ paddingHorizontal:14, paddingBottom:14 }}
           renderItem={({ item }) => (
             <RankRow user={item} highlight={item.isMe}
-              zone={getZoneStyle(item.pos, users.length, mode)}/>
+              zone={getZoneStyle(item.pos, users.length, mode)}
+              onPress={!item.isMe ? () => router.push(`/friends/${item.id}`) : undefined}/>
           )}
           ListFooterComponent={
             myRow && !meInTop ? (

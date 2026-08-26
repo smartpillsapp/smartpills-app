@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView, Image } from "react-native";
+import { View, Text, Pressable, ScrollView, Image, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -7,6 +7,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { ensureStreakState, MAX_VACCINES, VACCINE_ICON_URL, VACCINE_ICON_BW_URL } from "../../lib/streak";
 import StreakCalendar from "../../components/StreakCalendar";
+import VaccineUsedFlash, { pickVaccineFlashMessage } from "../../components/VaccineUsedFlash";
+import StreakLostFlash, { pickStreakLostMessage } from "../../components/StreakLostFlash";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -27,6 +29,10 @@ export default function Quiz() {
   const [vaccineDays, setVaccineDays] = useState([]);
   const [iceDays, setIceDays] = useState([]);
   const [vaccines, setVaccines] = useState(MAX_VACCINES);
+  const [authUserId, setAuthUserId] = useState(null);
+  const [vaccineFlashMsg, setVaccineFlashMsg] = useState(null);
+  const [streakLostFlashMsg, setStreakLostFlashMsg] = useState(null);
+  const [showVaccinesInfo, setShowVaccinesInfo] = useState(false);
 
   // Recargar perfil cada vez que se entra a la pestaña Test
   // (necesario para que el calendario muestre el fuego al volver del reto diario)
@@ -35,6 +41,7 @@ export default function Quiz() {
   async function loadProfile() {
     const { data:{ user } } = await supabase.auth.getUser();
     if(!user) return;
+    setAuthUserId(user.id);
     let { data:profile } = await supabase
       .from("profiles")
       .select("*")
@@ -49,12 +56,61 @@ export default function Quiz() {
       setVaccineDays(Array.isArray(profile.streak_vaccines) ? profile.streak_vaccines : []);
       setIceDays(Array.isArray(profile.ice_days)            ? profile.ice_days        : []);
       setVaccines(profile.vaccines_remaining ?? MAX_VACCINES);
+
+      // Flash de vacuna gastada
+      if(profile.pending_vaccine_flash && !vaccineFlashMsg) {
+        setVaccineFlashMsg(pickVaccineFlashMessage());
+      }
+      // Flash de racha perdida
+      if(profile.pending_streak_lost_flash && !streakLostFlashMsg) {
+        setStreakLostFlashMsg(pickStreakLostMessage());
+      }
+    }
+  }
+
+  async function dismissVaccineFlash() {
+    setVaccineFlashMsg(null);
+    if(authUserId) {
+      try {
+        await supabase.from("profiles")
+          .update({ pending_vaccine_flash: null })
+          .eq("auth_user_id", authUserId);
+      } catch(err) {
+        console.warn("No se pudo limpiar pending_vaccine_flash:", err?.message);
+      }
+    }
+  }
+
+  async function dismissStreakLostFlash() {
+    setStreakLostFlashMsg(null);
+    if(authUserId) {
+      try {
+        await supabase.from("profiles")
+          .update({ pending_streak_lost_flash: null })
+          .eq("auth_user_id", authUserId);
+      } catch(err) {
+        console.warn("No se pudo limpiar pending_streak_lost_flash:", err?.message);
+      }
     }
   }
 
   return (
     <SafeAreaView style={{ flex:1, backgroundColor:C.teal800 }} edges={["top"]}>
       <StatusBar style="light"/>
+
+      {/* Flash de vacuna gastada (ayer no hiciste el test, se usó una vacuna) */}
+      <VaccineUsedFlash
+        visible={!!vaccineFlashMsg}
+        message={vaccineFlashMsg}
+        onDismiss={dismissVaccineFlash}
+      />
+
+      {/* Flash de racha perdida (sin vacunas disponibles, racha rota) */}
+      <StreakLostFlash
+        visible={!!streakLostFlashMsg}
+        message={streakLostFlashMsg}
+        onDismiss={dismissStreakLostFlash}
+      />
 
       {/* Cabecera */}
       <View style={{ backgroundColor:C.teal800, paddingHorizontal:16, paddingTop:16, paddingBottom:22 }}>
@@ -185,7 +241,81 @@ export default function Quiz() {
             );
           })}
         </View>
+
+        {/* Botón "Acerca de las vacunas" */}
+        <Pressable onPress={() => setShowVaccinesInfo(true)} hitSlop={8}
+          style={{
+            alignSelf:"flex-end", flexDirection:"row", alignItems:"center", gap:4,
+            marginTop:6, marginRight:4,
+          }}>
+          <Text style={{
+            fontSize:10, fontWeight:"500", letterSpacing:1.4,
+            textTransform:"uppercase", color:C.muted2,
+          }}>
+            Acerca de las vacunas
+          </Text>
+          <Ionicons name="help-circle-outline" size={14} color={C.muted2}/>
+        </Pressable>
       </ScrollView>
+
+      {/* Modal informativo de vacunas — bottom sheet */}
+      <Modal
+        visible={showVaccinesInfo}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowVaccinesInfo(false)}
+      >
+        <Pressable
+          onPress={() => setShowVaccinesInfo(false)}
+          style={{ flex:1, justifyContent:"flex-end", backgroundColor:"rgba(0,0,0,0.4)" }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              backgroundColor:"#edf8f6",
+              borderTopLeftRadius:24, borderTopRightRadius:24,
+              paddingHorizontal:24, paddingTop:28, paddingBottom:36,
+              borderTopWidth:1, borderColor:C.teal100,
+            }}
+          >
+            {/* Asa visual */}
+            <View style={{
+              alignSelf:"center", width:42, height:4, borderRadius:2,
+              backgroundColor:"#bcd4cf", marginBottom:18,
+            }}/>
+
+            <View style={{ flexDirection:"row", alignItems:"center", gap:10, marginBottom:14 }}>
+              <Image
+                source={{ uri: VACCINE_ICON_URL }}
+                style={{ width:32, height:32 }}
+                resizeMode="contain"
+              />
+              <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.teal800, fontWeight:"700" }}>
+                Acerca de las vacunas
+              </Text>
+            </View>
+
+            <Text style={{ fontSize:15, lineHeight:23, color:C.ink, marginBottom:20 }}>
+              Las vacunas son como comodines: sirven para que, si un día se te olvida hacer el test diario, no pierdas tu preciada racha.{"\n\n"}
+              <Text style={{ fontWeight:"700" }}>¿Cómo puedes recargarlas?</Text>{"\n"}
+              • Cada vez que subas de categoría: +1 vacuna.{"\n"}
+              • Cada 30 días seguidos de racha: +1 vacuna.{"\n"}
+              <Text style={{ fontSize:13, color:C.muted2 }}>(Máximo 2 vacunas a la vez.)</Text>{"\n\n"}
+              <Text style={{ fontWeight:"700", color:C.coral500 }}>Si te quedas sin vacunas tu racha está en peligro. ¡No te la juegues!</Text>
+            </Text>
+
+            <Pressable
+              onPress={() => setShowVaccinesInfo(false)}
+              style={({pressed}) => ({
+                backgroundColor:C.teal600, paddingVertical:13, borderRadius:14,
+                alignItems:"center", opacity: pressed ? 0.9 : 1,
+              })}
+            >
+              <Text style={{ color:"white", fontSize:14, fontWeight:"600" }}>Entendido</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

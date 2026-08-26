@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
+import UserAvatar from "../../components/UserAvatar";
 
 const C = {
   teal800:"#0f3d35", teal700:"#155c50", teal600:"#1a7a69", teal500:"#1d9e87", teal300:"#6dcfc0", teal100:"#d4f0eb", teal50:"#edf8f6",
@@ -53,7 +54,7 @@ export default function FriendsScreen() {
       if(allIds.length > 0) {
         const { data:ps } = await supabase
           .from("profiles")
-          .select("id, username, full_name, profession, current_league, racha_dias, total_xp")
+          .select("id, username, full_name, profession, current_league, racha_dias, total_xp, avatar_id")
           .in("id", allIds);
         (ps || []).forEach(p => { profilesMap[p.id] = p; });
       }
@@ -145,11 +146,13 @@ export default function FriendsScreen() {
                         backgroundColor:C.white, borderWidth:1, borderColor:C.border, borderRadius:12,
                         padding:12, marginBottom:8, flexDirection:"row", alignItems:"center", gap:10,
                       }}>
-                        <View style={{ width:42, height:42, borderRadius:21, backgroundColor:C.teal50, alignItems:"center", justifyContent:"center" }}>
-                          <Text style={{ fontFamily:"Georgia", fontSize:18, color:C.teal600 }}>
-                            {(profile.username || "?").charAt(0).toUpperCase()}
-                          </Text>
-                        </View>
+                        <UserAvatar
+                          avatarId={profile.avatar_id}
+                          initials={(profile.username || "?").charAt(0).toUpperCase()}
+                          size={42}
+                          color={C.teal50}
+                          initialsStyle={{ fontFamily:"Georgia", fontSize:18, color:C.teal600 }}
+                        />
                         <View style={{ flex:1, minWidth:0 }}>
                           <Text style={{ fontSize:14, fontWeight:"600", color:C.ink }}>{profile.full_name || profile.username}</Text>
                           <Text style={{ fontSize:11, color:C.muted2 }}>
@@ -196,11 +199,13 @@ export default function FriendsScreen() {
                   padding:12, marginBottom:8, flexDirection:"row", alignItems:"center", gap:12,
                   opacity: pressed ? 0.85 : 1,
                 })}>
-                <View style={{ width:48, height:48, borderRadius:24, backgroundColor:C.teal50, alignItems:"center", justifyContent:"center" }}>
-                  <Text style={{ fontFamily:"Georgia", fontSize:20, color:C.teal600 }}>
-                    {(item.username || "?").charAt(0).toUpperCase()}
-                  </Text>
-                </View>
+                <UserAvatar
+                  avatarId={item.avatar_id}
+                  initials={(item.username || "?").charAt(0).toUpperCase()}
+                  size={48}
+                  color={C.teal50}
+                  initialsStyle={{ fontFamily:"Georgia", fontSize:20, color:C.teal600 }}
+                />
                 <View style={{ flex:1, minWidth:0 }}>
                   <Text style={{ fontSize:14, fontWeight:"600", color:C.ink }}>{item.full_name || item.username}</Text>
                   <Text style={{ fontSize:11, color:C.muted2, marginTop:2 }}>
