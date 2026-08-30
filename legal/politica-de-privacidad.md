@@ -1,7 +1,7 @@
 # Política de Privacidad
 
-**Última actualización:** 16 de mayo de 2026
-**Versión:** 1.0
+**Última actualización:** 30 de agosto de 2026
+**Versión:** 1.2
 
 ---
 
@@ -39,13 +39,15 @@ Tratamos los siguientes datos personales del Usuario:
 - Especialidad
 - Centro de trabajo (opcional)
 - Ciudad / provincia (opcional)
+- Foto de perfil: identificador numérico de avatar (1-12) elegido entre imágenes predefinidas incluidas en la Aplicación. No se almacenan ni procesan fotografías reales del Usuario.
 
 ### 2.2. Datos generados por el uso de la Aplicación
 
 - Reacciones a contenidos (likes, dislikes)
 - Contenido guardado ("Botiquín")
-- Resultados de tests y retos
-- Puntos de experiencia (XP), liga actual, racha de días, fecha del último test
+- Resultados de tests y retos diarios; historial de preguntas ya respondidas (para evitar repeticiones)
+- Puntos de experiencia (XP) semanal e histórico, liga actual, racha de días, fecha del último test
+- Relaciones sociales: lista de amigos (usuarios con quien el Usuario ha establecido amistad mutua dentro de la Aplicación)
 - Identificadores técnicos: identificador de cuenta, fecha y hora de inicio de sesión
 
 ### 2.3. Datos técnicos automáticos
@@ -55,7 +57,15 @@ A través del proveedor de autenticación e infraestructura (Supabase) podemos r
 - Datos del dispositivo y sistema operativo
 - Datos de diagnóstico básicos (errores, rendimiento)
 
-### 2.4. Categorías especiales de datos
+### 2.4. Token de notificaciones push
+
+Si el Usuario concede permiso para recibir notificaciones push, la Aplicación almacena el identificador técnico del dispositivo (token de notificación) proporcionado por el sistema operativo. Este identificador se usa exclusivamente para enviar al Usuario:
+
+- Alertas de racha (recordatorio de actividad diaria cuando lleva más de un día sin completar el reto).
+
+El Usuario puede revocar este permiso en cualquier momento desde la configuración del sistema operativo de su dispositivo. La revocación no afecta al resto de funcionalidades.
+
+### 2.5. Categorías especiales de datos
 
 **SmartPills no solicita ni trata categorías especiales de datos** (datos de salud, biométricos, genéticos, religiosos, etc.) de los Usuarios.
 
@@ -71,6 +81,9 @@ El Usuario **no debe introducir en la Aplicación datos personales identificativ
 | Personalizar el contenido mostrado según profesión y especialidad | **Ejecución de contrato** (art. 6.1.b RGPD) |
 | Operar el sistema de gamificación (XP, ligas, ranking, rachas) | **Ejecución de contrato** (art. 6.1.b RGPD) |
 | Mostrar el ranking público con nombre de usuario, profesión y, en su caso, ciudad/centro | **Ejecución de contrato** (art. 6.1.b RGPD) e **interés legítimo** en operar la dinámica de gamificación (art. 6.1.f RGPD) |
+| Gestionar la lista de amigos y mostrar el perfil del Usuario a sus amigos | **Ejecución de contrato** (art. 6.1.b RGPD) |
+| Evitar que el Usuario vea repetidas preguntas ya respondidas (historial de test) | **Ejecución de contrato** (art. 6.1.b RGPD) |
+| Enviar notificaciones push de racha (recordatorio de actividad) | **Consentimiento** del Usuario (art. 6.1.a RGPD), revocable en cualquier momento |
 | Mejorar el Servicio mediante análisis agregado de uso | **Interés legítimo** del Responsable (art. 6.1.f RGPD) |
 | Enviar comunicaciones por email relacionadas con el Servicio (verificación de cuenta, restablecimiento de contraseña, avisos esenciales) | **Ejecución de contrato** (art. 6.1.b RGPD) |
 | Enviar comunicaciones comerciales o newsletters | **Consentimiento** del Usuario (art. 6.1.a RGPD), revocable en cualquier momento |
@@ -91,7 +104,8 @@ Los datos del Usuario podrán ser comunicados o accesibles a los siguientes enca
 |---|---|---|
 | **Supabase Inc.** | Alojamiento de base de datos, autenticación de usuarios, almacenamiento de archivos, envío de emails transaccionales (verificación de cuenta, restablecimiento de contraseña) | UE (Frankfurt, Alemania) |
 | **Anthropic, PBC** | Generación o asistencia editorial para resúmenes, infografías, preguntas de test y otros contenidos formativos. Procesa exclusivamente contenidos editoriales, **no datos personales del Usuario** | EE. UU. |
-| **Apple Inc. / Google LLC** | Distribución de la Aplicación a través de App Store / Google Play | EE. UU. |
+| **Expo (Expo Go / EAS)** | Distribución de notificaciones push a través del servicio Expo Push Notifications; procesa el token de notificación del dispositivo del Usuario | EE. UU. |
+| **Apple Inc. / Google LLC** | Distribución de la Aplicación a través de App Store / Google Play; entrega final de notificaciones push al dispositivo | EE. UU. |
 
 Todos los encargados están obligados por contrato (Data Processing Agreement) al cumplimiento del RGPD y a la implementación de medidas técnicas y organizativas adecuadas.
 
@@ -122,7 +136,8 @@ El Usuario podrá solicitar copia de las garantías aplicables escribiendo a sma
 Los datos del Usuario se conservarán mientras la cuenta permanezca activa. En caso de cancelación de la cuenta:
 
 - **Datos identificativos y de perfil:** se eliminarán o anonimizarán en un plazo máximo de **30 días** desde la solicitud de cancelación.
-- **Datos de gamificación, ranking histórico y reacciones:** se anonimizarán o eliminarán en el mismo plazo.
+- **Datos de gamificación, ranking histórico, historial de preguntas, lista de amigos y reacciones:** se anonimizarán o eliminarán en el mismo plazo.
+- **Token de notificaciones push:** se eliminará en el mismo plazo de 30 días.
 - **Datos necesarios para el cumplimiento de obligaciones legales** (por ejemplo, registro de consentimientos, conservación de comunicaciones para defensa frente a reclamaciones): se conservarán **bloqueados** durante los plazos de prescripción aplicables (hasta 5 años en materia contractual general, conforme al artículo 1964 del Código Civil), tras lo cual serán suprimidos.
 - **Logs técnicos de seguridad:** se conservan por un plazo máximo de **12 meses**.
 
@@ -186,6 +201,7 @@ SmartPills es una aplicación móvil nativa que **no utiliza cookies** en el sen
 
 - **Almacenamiento local del dispositivo:** para mantener la sesión iniciada y guardar preferencias (técnicamente necesario).
 - **Identificadores de dispositivo y sesión** facilitados por el sistema operativo del Usuario.
+- **Token de notificaciones push:** identificador del dispositivo para el envío de alertas de racha, con consentimiento previo del Usuario.
 
 Si en el futuro se incorporan herramientas de analítica o publicidad, esta política se actualizará con información detallada y, en su caso, se solicitará el consentimiento del Usuario.
 

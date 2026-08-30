@@ -1,7 +1,7 @@
 # Aviso Legal
 
-**Última actualización:** 16 de mayo de 2026
-**Versión:** 1.0
+**Última actualización:** 30 de agosto de 2026
+**Versión:** 1.2
 
 ---
 
@@ -32,9 +32,12 @@ Si el Usuario no está de acuerdo con cualquiera de estas condiciones, deberá a
 SmartPills es una aplicación móvil de **divulgación y formación profesional dirigida exclusivamente a profesionales sanitarios** (medicina, enfermería, farmacia, fisioterapia y otras profesiones sanitarias) que ofrece:
 
 - Resúmenes y noticias sobre actualidad sanitaria y avances clínicos.
-- Enlaces a guías clínicas oficiales publicadas por sociedades científicas.
-- Contenido educativo (tests, retos, infografías).
-- Funcionalidades de gamificación (puntos de experiencia, ligas, ranking, rachas).
+- Guías clínicas oficiales organizadas por enfermedad o especialidad, publicadas por sociedades científicas.
+- Contenido educativo: tests, retos diarios e infografías generados mediante inteligencia artificial y revisados editorialmente.
+- Funcionalidades de gamificación: puntos de experiencia (XP), ligas proporcionales al tamaño de grupo, ranking y rachas de actividad.
+- Foto de perfil personalizable mediante selección de avatar entre imágenes predefinidas.
+- Funcionalidades sociales: sistema de amigos para ver el progreso de otros Usuarios.
+- Notificaciones push opcionales para recordatorios de racha.
 
 **SmartPills es una herramienta informativa y formativa.** No es un producto sanitario en el sentido del Reglamento (UE) 2017/745 (MDR), no realiza diagnósticos, no recomienda tratamientos individualizados y **no sustituye el juicio clínico profesional ni la consulta a fuentes oficiales**.
 
@@ -87,7 +90,7 @@ El Titular concede al Usuario una licencia personal, gratuita, revocable, no exc
 
 ## 6. Contenido generado mediante inteligencia artificial
 
-Parte del contenido de SmartPills (resúmenes, infografías, ideas clave) ha sido generado o asistido por sistemas de inteligencia artificial. En cumplimiento del Reglamento (UE) 2024/1689 (AI Act):
+Parte del contenido de SmartPills (resúmenes, infografías, preguntas de test, ideas clave) ha sido generado o asistido por sistemas de inteligencia artificial. En cumplimiento del Reglamento (UE) 2024/1689 (AI Act):
 
 - Se identifica claramente todo contenido producido por IA.
 - El Usuario reconoce que dicho contenido **puede contener errores, omisiones o imprecisiones**.
@@ -112,6 +115,7 @@ En la medida máxima permitida por la ley, el Titular no será responsable de:
 - Daños derivados de la indisponibilidad temporal del servicio, fallos técnicos, virus o ataques informáticos.
 - Daños derivados del uso indebido de la Aplicación por parte del Usuario o de terceros.
 - Daños derivados de la interacción del Usuario con sitios o servicios de terceros enlazados.
+- Daños derivados de las interacciones entre Usuarios a través de las funcionalidades sociales.
 
 El Titular hace su mejor esfuerzo para mantener la información actualizada y veraz, pero **no garantiza** que el contenido esté libre de errores ni que sea adecuado para una finalidad concreta.
 

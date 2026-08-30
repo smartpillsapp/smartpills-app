@@ -1,7 +1,7 @@
 # Términos y Condiciones de Uso
 
-**Última actualización:** 16 de mayo de 2026
-**Versión:** 1.0
+**Última actualización:** 30 de agosto de 2026
+**Versión:** 1.2
 
 ---
 
@@ -24,11 +24,14 @@ Si el Usuario no acepta estos Términos, deberá abstenerse de registrarse y uti
 SmartPills es una aplicación móvil de información, formación y actualización profesional dirigida a profesionales sanitarios. Sus principales funcionalidades son:
 
 - **Pills:** feed de artículos científicos y noticias sanitarias resumidos.
-- **Guías clínicas:** enlaces a guías oficiales de sociedades científicas con resumen de cambios.
+- **Guías clínicas:** enlaces a guías oficiales de sociedades científicas organizadas por enfermedad o especialidad, con resumen de cambios.
 - **Resúmenes e infografías:** material visual elaborado a partir de fuentes científicas.
-- **Tests y retos:** preguntas de evaluación de conocimiento.
-- **Gamificación:** sistema de puntos de experiencia (XP), ligas, ranking y rachas.
+- **Tests y retos diarios:** preguntas de evaluación del conocimiento; el sistema lleva un historial de preguntas ya respondidas para evitar repeticiones.
+- **Gamificación:** sistema de puntos de experiencia (XP), ligas proporcionales al tamaño del grupo, ranking semanal e histórico, y rachas de actividad diaria.
+- **Foto de perfil:** el Usuario puede elegir un avatar entre 12 imágenes predefinidas para personalizar su presencia en la Aplicación.
+- **Amigos:** el Usuario puede añadir a otros Usuarios como amigos y consultar su perfil y progreso dentro de la Aplicación.
 - **Botiquín personal:** contenido guardado por el Usuario.
+- **Notificaciones push:** el Usuario puede optar por recibir recordatorios de racha cuando no ha completado el reto diario.
 
 El Titular podrá añadir, modificar o eliminar funcionalidades en cualquier momento sin previo aviso.
 
@@ -80,9 +83,10 @@ Queda expresamente prohibido:
 - Realizar ingeniería inversa, descompilar o intentar acceder al código fuente de la Aplicación.
 - Eludir o intentar eludir medidas técnicas de seguridad o de control de acceso.
 - Suplantar la identidad de otra persona o falsear datos profesionales.
-- Manipular el sistema de gamificación (XP, ligas, ranking) mediante trampas o cuentas múltiples.
+- Manipular el sistema de gamificación (XP, ligas, ranking) mediante trampas, cuentas múltiples u otras técnicas fraudulentas.
 - Reproducir, redistribuir o explotar comercialmente el contenido de SmartPills sin autorización expresa.
 - Utilizar SmartPills para tomar decisiones clínicas individuales sin el debido contraste con fuentes oficiales (véase cláusula 6).
+- Acosar, intimidar o molestar a otros Usuarios a través de las funcionalidades sociales (amigos, ranking).
 
 El incumplimiento podrá motivar la suspensión inmediata de la cuenta y, en su caso, las acciones legales correspondientes.
 
@@ -127,7 +131,7 @@ El Usuario se compromete a **contrastar siempre** la información de SmartPills 
 
 ### 6.3. Contenido generado por inteligencia artificial
 
-Parte del contenido de SmartPills se genera o asiste mediante sistemas de inteligencia artificial (resúmenes, infografías, ideas clave). Conforme al Reglamento (UE) 2024/1689 (AI Act):
+Parte del contenido de SmartPills se genera o asiste mediante sistemas de inteligencia artificial (resúmenes, infografías, preguntas de test, ideas clave). Conforme al Reglamento (UE) 2024/1689 (AI Act):
 
 - Dicho contenido se identifica visiblemente como generado por IA.
 - El Usuario reconoce que el contenido generado por IA **puede contener errores, omisiones, sesgos o información desactualizada** ("alucinaciones").
@@ -142,14 +146,33 @@ El Usuario asume expresamente el deber de contrastar la información con fuentes
 SmartPills incluye un sistema de gamificación basado en puntos de experiencia (XP), ligas, ranking y rachas, cuya finalidad es motivar el aprendizaje y la actualización profesional.
 
 - Los puntos, ligas y rachas **no tienen valor económico** y no son canjeables por dinero, bienes o servicios.
+- El sistema de ligas agrupa a los Usuarios en divisiones. El número de Usuarios que asciende o desciende de liga en cada reset semanal es proporcional al tamaño de cada grupo; el Titular puede revisar estas reglas en cualquier momento.
 - El Titular puede modificar las reglas de gamificación, recalcular puntuaciones, anular cuentas o suspender el sistema en cualquier momento sin que ello genere derecho a indemnización.
 - El uso de trampas, cuentas múltiples u otras técnicas para manipular las puntuaciones es motivo de cancelación de la cuenta.
 
-El Usuario acepta que su nombre de usuario, profesión y, en su caso, ciudad/centro de trabajo, **podrán ser visibles** en rankings y ligas para los demás Usuarios, salvo que se habilite y active expresamente una opción de anonimato.
+El Usuario acepta que su nombre de usuario, profesión y, en su caso, ciudad/centro de trabajo y avatar de perfil, **podrán ser visibles** en rankings, ligas y perfiles de otros Usuarios, salvo que se habilite y active expresamente una opción de anonimato.
 
 ---
 
-## 8. Modificaciones
+## 8. Funcionalidades sociales (Amigos)
+
+SmartPills permite al Usuario añadir a otros Usuarios como amigos para ver su progreso y perfil dentro de la Aplicación. El Usuario:
+
+- Puede enviar, aceptar o rechazar solicitudes de amistad.
+- Puede eliminar amigos en cualquier momento desde su perfil.
+- Acepta que, al establecer una amistad mutua, su nombre de usuario, foto de perfil (avatar), liga actual y estadísticas de juego serán visibles para dicho amigo.
+
+El Titular no es responsable de las interacciones entre Usuarios. Cualquier uso abusivo de estas funcionalidades deberá notificarse a smartpillsapp@gmail.com.
+
+---
+
+## 9. Notificaciones push
+
+Si el Usuario otorga permiso para recibir notificaciones push, la Aplicación podrá enviarle alertas relacionadas con su actividad (por ejemplo, recordatorios de racha). El Usuario puede revocar este permiso en cualquier momento desde la configuración del sistema operativo de su dispositivo, sin que ello afecte al resto de funcionalidades.
+
+---
+
+## 10. Modificaciones
 
 El Titular podrá modificar estos Términos para adaptarlos a cambios normativos, técnicos o del propio Servicio. Las modificaciones se comunicarán dentro de la Aplicación con una antelación razonable. El uso continuado del Servicio tras la entrada en vigor de las modificaciones implicará su aceptación.
 
@@ -157,13 +180,13 @@ Si el Usuario no estuviera de acuerdo con la nueva versión, podrá cancelar su 
 
 ---
 
-## 9. Suspensión y terminación
+## 11. Suspensión y terminación
 
-### 9.1. Por el Usuario
+### 11.1. Por el Usuario
 
 El Usuario podrá cancelar su cuenta en cualquier momento desde el apartado correspondiente del perfil, lo que implicará la eliminación de sus datos personales conforme a lo dispuesto en la Política de Privacidad.
 
-### 9.2. Por el Titular
+### 11.2. Por el Titular
 
 El Titular podrá suspender o cancelar la cuenta del Usuario, total o parcialmente, sin necesidad de preaviso, en los siguientes casos:
 
@@ -176,7 +199,7 @@ La cancelación no generará derecho a indemnización a favor del Usuario, sin p
 
 ---
 
-## 10. Limitación de responsabilidad
+## 12. Limitación de responsabilidad
 
 En la medida máxima permitida por la legislación aplicable, el Titular no será responsable de:
 
@@ -184,6 +207,7 @@ En la medida máxima permitida por la legislación aplicable, el Titular no ser�
 - Daños derivados de decisiones clínicas adoptadas por el Usuario sobre la base del contenido de la Aplicación.
 - Daños derivados de la indisponibilidad temporal del Servicio, errores técnicos, virus, ataques informáticos o causas de fuerza mayor.
 - Daños derivados de la interacción del Usuario con servicios de terceros enlazados desde la Aplicación.
+- Daños derivados de las interacciones entre Usuarios a través de las funcionalidades sociales.
 
 La responsabilidad total del Titular, en cualquier caso, quedará limitada a las cantidades efectivamente abonadas por el Usuario al Titular en los doce (12) meses anteriores al hecho que motive la reclamación, o a 100 euros si el Servicio se ha utilizado de forma gratuita.
 
@@ -191,31 +215,31 @@ Estas limitaciones no excluyen la responsabilidad del Titular por dolo, culpa gr
 
 ---
 
-## 11. Indemnización
+## 13. Indemnización
 
 El Usuario se compromete a mantener indemne al Titular frente a cualquier reclamación, sanción, daño, pérdida, gasto u honorarios de letrados que se deriven del incumplimiento por su parte de estos Términos, de la legislación aplicable o de derechos de terceros.
 
 ---
 
-## 12. Datos personales
+## 14. Datos personales
 
 El tratamiento de los datos personales del Usuario se rige por la **Política de Privacidad**, accesible dentro de la Aplicación, que cumple con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018, de Protección de Datos Personales y Garantía de los Derechos Digitales (LOPDGDD).
 
 ---
 
-## 13. Cesión
+## 15. Cesión
 
 El Usuario no podrá ceder, transmitir o subrogar sus derechos u obligaciones derivados de estos Términos sin consentimiento previo y por escrito del Titular. El Titular podrá ceder la posición contractual a terceros, en particular en el marco de operaciones societarias (fusión, escisión, venta de activos), notificándolo al Usuario.
 
 ---
 
-## 14. Nulidad parcial
+## 16. Nulidad parcial
 
 Si alguna cláusula de estos Términos fuera declarada nula o inaplicable por una autoridad competente, dicha declaración no afectará a la validez del resto. La cláusula nula se sustituirá por la disposición legal o jurisprudencial más próxima a la voluntad de las partes.
 
 ---
 
-## 15. Legislación aplicable y jurisdicción
+## 17. Legislación aplicable y jurisdicción
 
 Estos Términos se rigen por la legislación española. Para cualquier controversia derivada de la interpretación o aplicación de estos Términos, las partes, con renuncia expresa a su propio fuero si lo tuvieren, se someten a los **Juzgados y Tribunales de Oviedo (Asturias)**, salvo que la legislación aplicable a consumidores y usuarios establezca un fuero distinto.
 
@@ -223,7 +247,7 @@ El Usuario consumidor podrá acudir a la plataforma europea de resolución de li
 
 ---
 
-## 16. Contacto
+## 18. Contacto
 
 Para cualquier consulta sobre estos Términos:
 
